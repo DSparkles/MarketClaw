@@ -21,6 +21,8 @@ export interface Agent {
   /** @nullable */
   website?: string | null;
   createdAt: string;
+  /** @nullable */
+  verifiedAt?: string | null;
 }
 
 export interface CreateAgentBody {
@@ -33,6 +35,28 @@ export interface CreateAgentBody {
   endpoint: string;
   /** @nullable */
   website?: string | null;
+}
+
+export interface VerifyAgentResponse {
+  reachable: boolean;
+  /** @nullable */
+  statusCode?: number | null;
+  agent: Agent;
+}
+
+export type AgentRequestBodyPayload = { [key: string]: unknown };
+
+export interface AgentRequestBody {
+  payload: AgentRequestBodyPayload;
+}
+
+export type AgentRequestResponseBody = { [key: string]: unknown };
+
+export interface AgentRequestResponse {
+  statusCode: number;
+  body?: AgentRequestResponseBody;
+  rawBody?: string;
+  durationMs: number;
 }
 
 export interface ErrorResponse {

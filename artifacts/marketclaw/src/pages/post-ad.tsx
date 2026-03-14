@@ -1,12 +1,12 @@
 import * as React from "react";
 import { useLocation } from "wouter";
-import { useCreateAgent, getListAgentsQueryKey } from "@workspace/api-client-react";
+import { useCreateAgent, useVerifyAgent, getListAgentsQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { motion } from "framer-motion";
-import { Terminal, Cpu, Tag, DollarSign, Globe, FileText, User } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Terminal, Cpu, Tag, DollarSign, Globe, FileText, User, ShieldCheck, ShieldX, Loader2, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -25,22 +25,35 @@ const formSchema = z.object({
 });
 
 type FormValues = z.infer<typeof formSchema>;
+type VerifyState = "idle" | "verifying" | "verified" | "unreachable" | "done";
 
 export function PostAd() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
+  const [verifyState, setVerifyState] = React.useState<VerifyState>("idle");
+  const [createdId, setCreatedId] = React.useState<number | null>(null);
+
+  const { mutate: verifyAgent } = useVerifyAgent({
+    mutation: {
+      onSuccess: (data) => {
+        setVerifyState(data.reachable ? "verified" : "unreachable");
+        setTimeout(() => setLocation("/"), 2000);
+      },
+      onError: () => {
+        setVerifyState("unreachable");
+        setTimeout(() => setLocation("/"), 2000);
+      }
+    }
+  });
+
   const { mutate: createAgent, isPending } = useCreateAgent({
     mutation: {
-      onSuccess: () => {
+      onSuccess: (data) => {
         queryClient.invalidateQueries({ queryKey: getListAgentsQueryKey() });
-        queryClient.invalidateQueries({ queryKey: ["/api/search"] });
-        toast({
-          title: "Success!",
-          description: "Your agent ad has been posted to the marketplace.",
-        });
-        setLocation("/");
+        setCreatedId(data.id);
+        setVerifyState("verifying");
+        verifyAgent({ id: data.id });
       },
       onError: (error: Error & { data?: { error?: string } }) => {
         const message = error.data?.error || error.message || "An unexpected error occurred";
@@ -71,15 +84,15 @@ export function PostAd() {
   });
 
   const onSubmit = (data: FormValues) => {
-    // Clean up optional fields
     const formattedData = {
       ...data,
       price: data.price?.trim() || null,
       website: data.website?.trim() || null,
     };
-    
     createAgent({ data: formattedData });
   };
+
+  const isSubmitting = isPending || verifyState === "verifying";
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
@@ -91,17 +104,40 @@ export function PostAd() {
         <div className="mb-10">
           <h1 className="text-4xl font-display font-bold mb-4">Post Agent Ad</h1>
           <p className="text-muted-foreground text-lg">
-            Broadcast your autonomous agent's capabilities to the network. Fill out the details below to list your service on MarketClaw.
+            Broadcast your autonomous agent's capabilities to the network. Your endpoint will be pinged automatically to confirm it's live.
           </p>
         </div>
 
+        {/* Verification status overlay */}
+        <AnimatePresence>
+          {verifyState !== "idle" && (
+            <motion.div
+              initial={{ opacity: 0, y: -12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className={`mb-6 flex items-center gap-3 px-5 py-4 rounded-2xl border text-sm font-medium ${
+                verifyState === "verifying"
+                  ? "bg-primary/5 border-primary/20 text-primary"
+                  : verifyState === "verified"
+                  ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+                  : "bg-amber-500/10 border-amber-500/20 text-amber-400"
+              }`}
+            >
+              {verifyState === "verifying" && <Loader2 className="w-4 h-4 animate-spin" />}
+              {verifyState === "verified" && <ShieldCheck className="w-4 h-4" />}
+              {verifyState === "unreachable" && <ShieldX className="w-4 h-4" />}
+              {verifyState === "verifying" && "Listing posted! Verifying your endpoint is reachable…"}
+              {verifyState === "verified" && "Endpoint verified and live! Redirecting to marketplace…"}
+              {verifyState === "unreachable" && "Listing posted! Endpoint could not be reached (you can verify later). Redirecting…"}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         <div className="glass-panel p-8 sm:p-10 rounded-3xl relative overflow-hidden">
-          {/* Decorative background flare */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-[80px] pointer-events-none" />
           
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-8 relative z-10">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* Agent Name */}
               <div className="space-y-2">
                 <label className="text-sm font-bold flex items-center gap-2">
                   <User className="w-4 h-4 text-primary" /> Agent Name *
@@ -114,7 +150,6 @@ export function PostAd() {
                 {errors.agentName && <p className="text-sm text-destructive font-medium">{errors.agentName.message}</p>}
               </div>
 
-              {/* Service Title */}
               <div className="space-y-2">
                 <label className="text-sm font-bold flex items-center gap-2">
                   <Cpu className="w-4 h-4 text-primary" /> Service Title *
@@ -128,7 +163,6 @@ export function PostAd() {
               </div>
             </div>
 
-            {/* Description */}
             <div className="space-y-2">
               <label className="text-sm font-bold flex items-center gap-2">
                 <FileText className="w-4 h-4 text-primary" /> Description *
@@ -141,7 +175,6 @@ export function PostAd() {
               {errors.description && <p className="text-sm text-destructive font-medium">{errors.description.message}</p>}
             </div>
 
-            {/* Tags */}
             <div className="space-y-2">
               <label className="text-sm font-bold flex items-center gap-2">
                 <Tag className="w-4 h-4 text-primary" /> Tags *
@@ -156,7 +189,6 @@ export function PostAd() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* Endpoint */}
               <div className="space-y-2">
                 <label className="text-sm font-bold flex items-center gap-2">
                   <Terminal className="w-4 h-4 text-primary" /> Contact API Endpoint *
@@ -166,10 +198,10 @@ export function PostAd() {
                   placeholder="https://api.yourdomain.com/v1/agent" 
                   className={errors.endpoint ? "border-destructive focus-visible:ring-destructive/10" : ""}
                 />
+                <p className="text-xs text-muted-foreground">This endpoint will be pinged to verify it's live.</p>
                 {errors.endpoint && <p className="text-sm text-destructive font-medium">{errors.endpoint.message}</p>}
               </div>
 
-              {/* Price */}
               <div className="space-y-2">
                 <label className="text-sm font-bold flex items-center gap-2 text-muted-foreground">
                   <DollarSign className="w-4 h-4" /> Pricing Model <span className="font-normal">(Optional)</span>
@@ -181,7 +213,6 @@ export function PostAd() {
               </div>
             </div>
 
-            {/* Website */}
             <div className="space-y-2">
               <label className="text-sm font-bold flex items-center gap-2 text-muted-foreground">
                 <Globe className="w-4 h-4" /> Website / Docs URL <span className="font-normal">(Optional)</span>
@@ -194,13 +225,19 @@ export function PostAd() {
               {errors.website && <p className="text-sm text-destructive font-medium">{errors.website.message}</p>}
             </div>
 
-            <div className="pt-6 border-t border-border flex items-center justify-end gap-4">
-              <Button type="button" variant="ghost" onClick={() => setLocation("/")}>
-                Cancel
-              </Button>
-              <Button type="submit" size="lg" isLoading={isPending} className="w-full sm:w-auto">
-                Deploy Listing
-              </Button>
+            <div className="pt-6 border-t border-border flex items-center justify-between gap-4">
+              <div className="text-xs text-muted-foreground flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                Endpoint is auto-verified on submission
+              </div>
+              <div className="flex items-center gap-4">
+                <Button type="button" variant="ghost" onClick={() => setLocation("/")} disabled={isSubmitting}>
+                  Cancel
+                </Button>
+                <Button type="submit" size="lg" isLoading={isSubmitting} className="w-full sm:w-auto">
+                  Deploy Listing
+                </Button>
+              </div>
             </div>
           </form>
         </div>

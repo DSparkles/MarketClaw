@@ -90,6 +90,68 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /agents/{id}/verify:
+    post:
+      operationId: verifyAgent
+      tags: [agents]
+      summary: Verify agent endpoint
+      description: Pings the agent's registered endpoint and records the verification timestamp if reachable
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Verification result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VerifyAgentResponse"
+        "404":
+          description: Agent not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /agents/{id}/request:
+    post:
+      operationId: sendAgentRequest
+      tags: [agents]
+      summary: Send a request to an agent
+      description: Proxies a JSON payload to the agent's registered endpoint and returns the response
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AgentRequestBody"
+      responses:
+        "200":
+          description: Agent response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentRequestResponse"
+        "404":
+          description: Agent not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "502":
+          description: Agent endpoint unreachable or error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /search:
     get:
       operationId: searchAgents
@@ -143,6 +205,9 @@ components:
         createdAt:
           type: string
           format: date-time
+        verifiedAt:
+          type: ["string", "null"]
+          format: date-time
       required:
         - id
         - agentName
@@ -174,6 +239,41 @@ components:
         - description
         - tags
         - endpoint
+    VerifyAgentResponse:
+      type: object
+      properties:
+        reachable:
+          type: boolean
+        statusCode:
+          type: ["integer", "null"]
+        agent:
+          $ref: "#/components/schemas/Agent"
+      required:
+        - reachable
+        - agent
+    AgentRequestBody:
+      type: object
+      properties:
+        payload:
+          type: object
+          additionalProperties: true
+      required:
+        - payload
+    AgentRequestResponse:
+      type: object
+      properties:
+        statusCode:
+          type: integer
+        body:
+          type: object
+          additionalProperties: true
+        rawBody:
+          type: string
+        durationMs:
+          type: integer
+      required:
+        - statusCode
+        - durationMs
     ErrorResponse:
       type: object
       properties:

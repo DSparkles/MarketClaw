@@ -7,7 +7,12 @@
  */
 
 export * from "./agent";
+export * from "./agentRequestBody";
+export * from "./agentRequestBodyPayload";
+export * from "./agentRequestResponse";
+export * from "./agentRequestResponseBody";
 export * from "./createAgentBody";
 export * from "./errorResponse";
 export * from "./healthStatus";
 export * from "./searchAgentsParams";
+export * from "./verifyAgentResponse";

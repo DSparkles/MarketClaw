@@ -29,6 +29,7 @@ export const ListAgentsResponseItem = zod.object({
   endpoint: zod.string(),
   website: zod.string().nullish(),
   createdAt: zod.date(),
+  verifiedAt: zod.date().nullish(),
 });
 export const ListAgentsResponse = zod.array(ListAgentsResponseItem);
 
@@ -64,6 +65,51 @@ export const GetAgentResponse = zod.object({
   endpoint: zod.string(),
   website: zod.string().nullish(),
   createdAt: zod.date(),
+  verifiedAt: zod.date().nullish(),
+});
+
+/**
+ * Pings the agent's registered endpoint and records the verification timestamp if reachable
+ * @summary Verify agent endpoint
+ */
+export const VerifyAgentParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const VerifyAgentResponse = zod.object({
+  reachable: zod.boolean(),
+  statusCode: zod.number().nullish(),
+  agent: zod.object({
+    id: zod.number(),
+    agentName: zod.string(),
+    serviceTitle: zod.string(),
+    description: zod.string(),
+    tags: zod.string(),
+    price: zod.string().nullish(),
+    endpoint: zod.string(),
+    website: zod.string().nullish(),
+    createdAt: zod.date(),
+    verifiedAt: zod.date().nullish(),
+  }),
+});
+
+/**
+ * Proxies a JSON payload to the agent's registered endpoint and returns the response
+ * @summary Send a request to an agent
+ */
+export const SendAgentRequestParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const SendAgentRequestBody = zod.object({
+  payload: zod.record(zod.string(), zod.unknown()),
+});
+
+export const SendAgentRequestResponse = zod.object({
+  statusCode: zod.number(),
+  body: zod.record(zod.string(), zod.unknown()).optional(),
+  rawBody: zod.string().optional(),
+  durationMs: zod.number(),
 });
 
 /**
@@ -84,5 +130,6 @@ export const SearchAgentsResponseItem = zod.object({
   endpoint: zod.string(),
   website: zod.string().nullish(),
   createdAt: zod.date(),
+  verifiedAt: zod.date().nullish(),
 });
 export const SearchAgentsResponse = zod.array(SearchAgentsResponseItem);

@@ -18,10 +18,13 @@ import type {
 
 import type {
   Agent,
+  AgentRequestBody,
+  AgentRequestResponse,
   CreateAgentBody,
   ErrorResponse,
   HealthStatus,
   SearchAgentsParams,
+  VerifyAgentResponse,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -355,6 +358,179 @@ export function useGetAgent<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * Pings the agent's registered endpoint and records the verification timestamp if reachable
+ * @summary Verify agent endpoint
+ */
+export const getVerifyAgentUrl = (id: number) => {
+  return `/api/agents/${id}/verify`;
+};
+
+export const verifyAgent = async (
+  id: number,
+  options?: RequestInit,
+): Promise<VerifyAgentResponse> => {
+  return customFetch<VerifyAgentResponse>(getVerifyAgentUrl(id), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getVerifyAgentMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof verifyAgent>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof verifyAgent>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["verifyAgent"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof verifyAgent>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return verifyAgent(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type VerifyAgentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof verifyAgent>>
+>;
+
+export type VerifyAgentMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Verify agent endpoint
+ */
+export const useVerifyAgent = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof verifyAgent>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof verifyAgent>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getVerifyAgentMutationOptions(options));
+};
+
+/**
+ * Proxies a JSON payload to the agent's registered endpoint and returns the response
+ * @summary Send a request to an agent
+ */
+export const getSendAgentRequestUrl = (id: number) => {
+  return `/api/agents/${id}/request`;
+};
+
+export const sendAgentRequest = async (
+  id: number,
+  agentRequestBody: AgentRequestBody,
+  options?: RequestInit,
+): Promise<AgentRequestResponse> => {
+  return customFetch<AgentRequestResponse>(getSendAgentRequestUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(agentRequestBody),
+  });
+};
+
+export const getSendAgentRequestMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof sendAgentRequest>>,
+    TError,
+    { id: number; data: BodyType<AgentRequestBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof sendAgentRequest>>,
+  TError,
+  { id: number; data: BodyType<AgentRequestBody> },
+  TContext
+> => {
+  const mutationKey = ["sendAgentRequest"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof sendAgentRequest>>,
+    { id: number; data: BodyType<AgentRequestBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return sendAgentRequest(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SendAgentRequestMutationResult = NonNullable<
+  Awaited<ReturnType<typeof sendAgentRequest>>
+>;
+export type SendAgentRequestMutationBody = BodyType<AgentRequestBody>;
+export type SendAgentRequestMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Send a request to an agent
+ */
+export const useSendAgentRequest = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof sendAgentRequest>>,
+    TError,
+    { id: number; data: BodyType<AgentRequestBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof sendAgentRequest>>,
+  TError,
+  { id: number; data: BodyType<AgentRequestBody> },
+  TContext
+> => {
+  return useMutation(getSendAgentRequestMutationOptions(options));
+};
 
 /**
  * Search agents by tag or description keyword

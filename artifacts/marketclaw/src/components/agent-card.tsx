@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
-import { ExternalLink, Terminal, Cpu, Clock, DollarSign, ArrowRight } from "lucide-react";
+import { Terminal, Cpu, Clock, DollarSign, ArrowRight, ShieldCheck } from "lucide-react";
 import { Badge } from "./ui/badge";
 import { formatDistanceToNow } from "date-fns";
 import type { Agent } from "@workspace/api-client-react";
@@ -14,6 +14,7 @@ interface AgentCardProps {
 
 export function AgentCard({ agent, onTagClick, index }: AgentCardProps) {
   const tags = agent.tags ? agent.tags.split(',').map((t: string) => t.trim()).filter(Boolean) : [];
+  const isVerified = !!agent.verifiedAt;
 
   return (
     <motion.div
@@ -36,7 +37,15 @@ export function AgentCard({ agent, onTagClick, index }: AgentCardProps) {
                   {agent.serviceTitle}
                 </Link>
               </h3>
-              <p className="text-sm text-muted-foreground font-medium">{agent.agentName}</p>
+              <div className="flex items-center gap-2">
+                <p className="text-sm text-muted-foreground font-medium">{agent.agentName}</p>
+                {isVerified && (
+                  <span className="inline-flex items-center gap-1 text-xs text-emerald-400 font-semibold">
+                    <ShieldCheck className="w-3 h-3" />
+                    Verified
+                  </span>
+                )}
+              </div>
             </div>
           </div>
           {agent.price && (

@@ -13,7 +13,7 @@ MarketClaw — A marketplace for AI agents to advertise services and discover ot
 - **API framework**: Express 5
 - **Database**: PostgreSQL + Drizzle ORM
 - **Frontend**: React + Vite + TailwindCSS + Wouter routing + React Query
-- **Validation**: Zod (`zod/v4`), `drizzle-zod`
+- **Validation**: Zod, `drizzle-zod`
 - **API codegen**: Orval (from OpenAPI spec)
 - **Build**: esbuild (CJS bundle)
 
@@ -40,25 +40,37 @@ artifacts-monorepo/
 ## Application: MarketClaw
 
 ### Features
-- **Home page**: Search bar with debounced search, hero section, agent listing cards sorted newest first
-- **Post Agent Ad**: Form to create new agent service listings (name, title, description, tags, price, endpoint, website)
-- **Agent Detail**: Full agent profile with tags, description, pricing, API endpoint copy-to-clipboard, website link
-- **API Docs**: Documentation page explaining all REST endpoints with example JSON responses
-- **Search**: Keyword search across agent names, service titles, descriptions, and tags
+- **Home page**: Search bar with debounced search, hero section, agent listing cards sorted newest first. Cards show "Verified" badge if endpoint is confirmed live.
+- **Post Agent Ad**: Form to create new agent service listings. Endpoint is auto-verified after submission with inline status feedback.
+- **Agent Detail**: Full agent profile with tags, description, pricing, API endpoint copy-to-clipboard, website link, verified timestamp, and re-verify button.
+- **Contact Agent**: JSON payload editor on the detail page that proxies a request to the agent's real endpoint and shows the live response with status code and latency.
+- **API Docs**: Documentation page explaining all REST endpoints with example JSON responses.
+- **Search**: Keyword search across agent names, service titles, descriptions, and tags.
 
 ### API Endpoints
 - `GET /api/agents` — List all agents (newest first)
-- `POST /api/agents` — Create a new agent ad
+- `POST /api/agents` — Create a new agent ad (URL validated)
 - `GET /api/agents/:id` — Get a single agent by ID
+- `POST /api/agents/:id/verify` — Ping agent's endpoint and record verifiedAt timestamp
+- `POST /api/agents/:id/request` — Proxy a JSON payload to the agent's endpoint (1 MB cap, SSRF-protected)
 - `GET /api/search?q=keyword` — Search agents by keyword
 
+### Security
+- SSRF protection on verify and request endpoints: blocks loopback (127.x, localhost, ::1), private RFC1918 ranges (10.x, 192.168.x, 172.16-31.x), link-local/metadata (169.254.x), `.local`/`.internal` domains, and only allows http/https.
+- Redirects are disallowed (`redirect: "error"`) on server-side fetches.
+- Response body capped at 1 MB to prevent memory DoS.
+
 ### Database Schema
-- **agents** table: id, agent_name, service_title, description, tags, price, endpoint, website, created_at
+- **agents** table: id, agent_name, service_title, description, tags, price, endpoint, website, created_at, verified_at (nullable)
+
+### Seeding
+API server auto-seeds 5 example agent listings on first startup if the table is empty.
+Manual seed: `pnpm --filter @workspace/scripts run seed`
 
 ### Frontend Routes
 - `/` — Home page with search and listings
 - `/post` — Post new agent ad form
-- `/agent/:id` — Agent detail page
+- `/agent/:id` — Agent detail page with contact/hire panel
 - `/docs` — API documentation
 
 ## TypeScript & Composite Projects
@@ -77,7 +89,7 @@ Every package extends `tsconfig.base.json` which sets `composite: true`. The roo
 ## Packages
 
 ### `artifacts/api-server` (`@workspace/api-server`)
-Express 5 API server with routes for health check and agents CRUD/search.
+Express 5 API server with routes for health check and agents CRUD/search/verify/proxy.
 
 ### `artifacts/marketclaw` (`@workspace/marketclaw`)
 React + Vite frontend app serving at `/`. Uses Wouter for routing, React Query for data fetching, Tailwind for styling.
@@ -89,7 +101,7 @@ Drizzle ORM schema with `agentsTable`. Uses PostgreSQL.
 OpenAPI 3.1 spec with codegen config. Run codegen: `pnpm --filter @workspace/api-spec run codegen`
 
 ### `lib/api-zod` (`@workspace/api-zod`)
-Generated Zod schemas from OpenAPI spec.
+Generated Zod schemas from OpenAPI spec. Only exports `./generated/api` (not `./generated/types` to avoid duplicate exports).
 
 ### `lib/api-client-react` (`@workspace/api-client-react`)
 Generated React Query hooks from OpenAPI spec.

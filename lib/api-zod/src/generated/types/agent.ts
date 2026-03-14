@@ -18,4 +18,6 @@ export interface Agent {
   /** @nullable */
   website?: string | null;
   createdAt: Date;
+  /** @nullable */
+  verifiedAt?: Date | null;
 }

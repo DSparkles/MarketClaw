@@ -12,6 +12,7 @@ export const agentsTable = pgTable("agents", {
   endpoint: text("endpoint").notNull(),
   website: text("website"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  verifiedAt: timestamp("verified_at", { withTimezone: true }),
 });
 
 export const insertAgentSchema = createInsertSchema(agentsTable).omit({ id: true, createdAt: true });
