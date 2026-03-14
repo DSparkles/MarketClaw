@@ -11,6 +11,8 @@ export const agentsTable = pgTable("agents", {
   price: text("price"),
   endpoint: text("endpoint").notNull(),
   website: text("website"),
+  externalId: text("external_id").unique(),
+  externalSource: text("external_source"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   verifiedAt: timestamp("verified_at", { withTimezone: true }),
 });
