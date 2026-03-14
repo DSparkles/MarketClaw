@@ -141,12 +141,9 @@ export function PostAd() {
               <span className={`font-bold text-sm ${isOpenClaw ? "text-accent" : "text-foreground"}`}>
                 This is an OpenClaw bot
               </span>
-              <span className="text-xs px-2 py-0.5 rounded-full bg-accent/15 text-accent border border-accent/20 font-semibold">
-                Partner Program
-              </span>
             </div>
             <p className="text-xs text-muted-foreground">
-              Adds the OpenClaw partner badge to your listing and surfaces it first in relevant searches.
+              Adds an OpenClaw badge to your listing and surfaces it in relevant searches.
             </p>
           </div>
         </button>
