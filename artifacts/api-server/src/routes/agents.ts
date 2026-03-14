@@ -10,46 +10,97 @@ import {
   SearchAgentsResponse,
 } from "@workspace/api-zod";
 import { z } from "zod";
+import dns from "node:dns/promises";
+import net from "node:net";
 
 const router: IRouter = Router();
 
 const MAX_RESPONSE_BYTES = 1 * 1024 * 1024; // 1 MB cap on upstream responses
 
 /**
- * Basic SSRF protection: block requests to private/loopback/metadata hosts.
- * Returns true if the URL should be blocked.
+ * Returns true if the given IP address is in a private/restricted range.
+ * Covers: loopback, RFC1918, link-local/metadata, IPv6 special ranges.
  */
-function isSsrfBlocked(rawUrl: string): boolean {
+function isPrivateIp(ip: string): boolean {
+  // IPv4
+  if (net.isIPv4(ip)) {
+    const parts = ip.split(".").map(Number);
+    const [a, b] = parts;
+    if (a === 0) return true;                             // 0.0.0.0/8
+    if (a === 10) return true;                            // 10.0.0.0/8
+    if (a === 127) return true;                           // 127.0.0.0/8 loopback
+    if (a === 169 && b === 254) return true;              // 169.254.0.0/16 link-local / metadata
+    if (a === 172 && b >= 16 && b <= 31) return true;    // 172.16.0.0/12
+    if (a === 192 && b === 168) return true;              // 192.168.0.0/16
+    if (a === 100 && b >= 64 && b <= 127) return true;   // 100.64.0.0/10 shared address space
+    if (a === 198 && b === 51) return true;               // 198.51.100.0/24 documentation
+    if (a === 203 && b === 0) return true;                // 203.0.113.0/24 documentation
+    if (a === 240) return true;                           // 240.0.0.0/4 reserved
+    if (ip === "255.255.255.255") return true;
+    return false;
+  }
+  // IPv6
+  if (net.isIPv6(ip)) {
+    const lower = ip.toLowerCase();
+    if (lower === "::1") return true;                     // loopback
+    if (lower.startsWith("::ffff:")) {
+      // IPv4-mapped: check the embedded IPv4
+      const v4 = lower.slice(7);
+      if (net.isIPv4(v4)) return isPrivateIp(v4);
+    }
+    if (lower === "::" || lower === "0:0:0:0:0:0:0:0") return true;
+    if (lower.startsWith("fc") || lower.startsWith("fd")) return true; // ULA
+    if (lower.startsWith("fe80")) return true;           // link-local
+    if (lower.startsWith("ff")) return true;             // multicast
+    return false;
+  }
+  return true; // unknown format — block by default
+}
+
+/**
+ * Full SSRF protection check. Validates the URL structurally then resolves
+ * the hostname via DNS and verifies the resulting IP is public.
+ * Returns an error string if blocked, null if safe to proceed.
+ */
+async function ssrfCheck(rawUrl: string): Promise<string | null> {
   let parsed: URL;
   try {
     parsed = new URL(rawUrl);
   } catch {
-    return true;
+    return "Invalid URL";
   }
 
-  if (!["http:", "https:"].includes(parsed.protocol)) return true;
+  if (!["http:", "https:"].includes(parsed.protocol)) {
+    return "Only http and https protocols are permitted";
+  }
 
-  const host = parsed.hostname.toLowerCase().replace(/^\[|\]$/g, ""); // strip IPv6 brackets
+  const host = parsed.hostname.toLowerCase().replace(/^\[|\]$/g, "");
 
-  // Loopback
-  if (host === "localhost" || host === "127.0.0.1" || host === "::1" || host === "0.0.0.0") return true;
-  if (/^127\./.test(host)) return true;
+  // Block by hostname before DNS (catches common cases fast)
+  if (host === "localhost" || host === "0.0.0.0") return "Blocked host";
+  if (host.endsWith(".local") || host.endsWith(".internal") || host.endsWith(".localhost")) {
+    return "Blocked host";
+  }
 
-  // Private RFC1918
-  if (/^10\./.test(host)) return true;
-  if (/^192\.168\./.test(host)) return true;
-  if (/^172\.(1[6-9]|2[0-9]|3[01])\./.test(host)) return true;
+  // If hostname already looks like a raw IP, check it directly
+  if (net.isIP(host)) {
+    if (isPrivateIp(host)) return "Private/reserved IP address not permitted";
+    return null;
+  }
 
-  // Link-local / AWS/GCP/Azure metadata
-  if (/^169\.254\./.test(host)) return true;
+  // Resolve DNS and check each returned address
+  try {
+    const results = await dns.lookup(host, { all: true });
+    for (const { address } of results) {
+      if (isPrivateIp(address)) {
+        return `Resolved IP ${address} is in a private/reserved range`;
+      }
+    }
+  } catch {
+    return "Hostname could not be resolved";
+  }
 
-  // IPv6 private / link-local
-  if (/^f[cd]/i.test(host) || /^fe80/i.test(host)) return true;
-
-  // .local mDNS and internal-looking TLDs
-  if (host.endsWith(".local") || host.endsWith(".internal") || host.endsWith(".localhost")) return true;
-
-  return false;
+  return null;
 }
 
 /**
@@ -181,8 +232,9 @@ router.post("/agents/:id/verify", async (req, res): Promise<void> => {
       return;
     }
 
-    if (isSsrfBlocked(agent.endpoint)) {
-      res.status(400).json({ error: "Endpoint host is not permitted for external verification" });
+    const ssrfError = await ssrfCheck(agent.endpoint);
+    if (ssrfError) {
+      res.status(400).json({ error: `Endpoint not permitted: ${ssrfError}` });
       return;
     }
 
@@ -246,8 +298,9 @@ router.post("/agents/:id/request", async (req, res): Promise<void> => {
       return;
     }
 
-    if (isSsrfBlocked(agent.endpoint)) {
-      res.status(400).json({ error: "Endpoint host is not permitted for external requests" });
+    const ssrfError = await ssrfCheck(agent.endpoint);
+    if (ssrfError) {
+      res.status(400).json({ error: `Endpoint not permitted: ${ssrfError}` });
       return;
     }
 
