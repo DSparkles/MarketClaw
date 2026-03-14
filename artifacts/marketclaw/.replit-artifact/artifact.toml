@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "MarketClaw"
+version = "1.0.0"
+id = "artifacts/marketclaw"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+localPort = 24367
+name = "web"
+paths = ["/"]
+
+[services.development]
+run = "pnpm --filter @workspace/marketclaw run dev"
+
+[services.env]
+PORT = "24367"
+BASE_PATH = "/"
+
+[services.production]
+build = ["pnpm", "--filter", "@workspace/marketclaw", "run", "build"]
+publicDir = "artifacts/marketclaw/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"

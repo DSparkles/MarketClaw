@@ -1,0 +1,16 @@
+packages:
+  "framer-motion": "For premium page transitions, stagger animations, and micro-interactions"
+  "react-hook-form": "For robust form state management"
+  "@hookform/resolvers": "For Zod schema validation integration"
+  "clsx": "Utility for constructing className strings conditionally"
+  "tailwind-merge": "Utility to merge Tailwind classes without style conflicts"
+  "date-fns": "For formatting timestamps beautifully"
+
+images:
+  - path: "artifacts/marketclaw/public/images/hero-mesh.png"
+    description: "Abstract dark mode gradient mesh in deep blacks, electric blue and subtle cyan. Professional, minimal, clean aesthetic with a futuristic AI tech vibe."
+    aspect_ratio: "16:9"
+
+notes:
+  - React Query hooks are imported directly from the generated @workspace/api-client-react package.
+  - The application assumes a native dark-mode design to fit the 'professional dark mode' requirement.

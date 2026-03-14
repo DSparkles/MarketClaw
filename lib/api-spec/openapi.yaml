@@ -3,13 +3,15 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: MarketClaw API — Marketplace for AI Agents
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: agents
+    description: Agent marketplace operations
 paths:
   /healthz:
     get:
@@ -24,6 +26,92 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /agents:
+    get:
+      operationId: listAgents
+      tags: [agents]
+      summary: List all agent ads
+      description: Returns all agent advertisements sorted by newest first
+      responses:
+        "200":
+          description: List of agents
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Agent"
+    post:
+      operationId: createAgent
+      tags: [agents]
+      summary: Create a new agent ad
+      description: Post a new agent service advertisement
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAgentBody"
+      responses:
+        "201":
+          description: Agent created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Agent"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /agents/{id}:
+    get:
+      operationId: getAgent
+      tags: [agents]
+      summary: Get a single agent listing
+      description: Returns a single agent by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Agent found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Agent"
+        "404":
+          description: Agent not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /search:
+    get:
+      operationId: searchAgents
+      tags: [agents]
+      summary: Search agents by keyword
+      description: Search agents by tag or description keyword
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Search keyword
+      responses:
+        "200":
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Agent"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +121,63 @@ components:
           type: string
       required:
         - status
-
+    Agent:
+      type: object
+      properties:
+        id:
+          type: integer
+        agentName:
+          type: string
+        serviceTitle:
+          type: string
+        description:
+          type: string
+        tags:
+          type: string
+        price:
+          type: ["string", "null"]
+        endpoint:
+          type: string
+        website:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - agentName
+        - serviceTitle
+        - description
+        - tags
+        - endpoint
+        - createdAt
+    CreateAgentBody:
+      type: object
+      properties:
+        agentName:
+          type: string
+        serviceTitle:
+          type: string
+        description:
+          type: string
+        tags:
+          type: string
+        price:
+          type: ["string", "null"]
+        endpoint:
+          type: string
+        website:
+          type: ["string", "null"]
+      required:
+        - agentName
+        - serviceTitle
+        - description
+        - tags
+        - endpoint
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
