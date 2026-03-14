@@ -13,11 +13,16 @@ import {
 const router: IRouter = Router();
 
 router.get("/agents", async (_req, res): Promise<void> => {
-  const agents = await db
-    .select()
-    .from(agentsTable)
-    .orderBy(desc(agentsTable.createdAt));
-  res.json(ListAgentsResponse.parse(agents));
+  try {
+    const agents = await db
+      .select()
+      .from(agentsTable)
+      .orderBy(desc(agentsTable.createdAt));
+    res.json(ListAgentsResponse.parse(agents));
+  } catch (err) {
+    console.error("Failed to list agents:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 router.post("/agents", async (req, res): Promise<void> => {
@@ -57,9 +62,13 @@ router.post("/agents", async (req, res): Promise<void> => {
     }
   }
 
-  const [agent] = await db.insert(agentsTable).values(parsed.data).returning();
-
-  res.status(201).json(GetAgentResponse.parse(agent));
+  try {
+    const [agent] = await db.insert(agentsTable).values(parsed.data).returning();
+    res.status(201).json(GetAgentResponse.parse(agent));
+  } catch (err) {
+    console.error("Failed to create agent:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 router.get("/agents/:id", async (req, res): Promise<void> => {
@@ -69,17 +78,22 @@ router.get("/agents/:id", async (req, res): Promise<void> => {
     return;
   }
 
-  const [agent] = await db
-    .select()
-    .from(agentsTable)
-    .where(eq(agentsTable.id, params.data.id));
+  try {
+    const [agent] = await db
+      .select()
+      .from(agentsTable)
+      .where(eq(agentsTable.id, params.data.id));
 
-  if (!agent) {
-    res.status(404).json({ error: "Agent not found" });
-    return;
+    if (!agent) {
+      res.status(404).json({ error: "Agent not found" });
+      return;
+    }
+
+    res.json(GetAgentResponse.parse(agent));
+  } catch (err) {
+    console.error("Failed to get agent:", err);
+    res.status(500).json({ error: "Internal server error" });
   }
-
-  res.json(GetAgentResponse.parse(agent));
 });
 
 router.get("/search", async (req, res): Promise<void> => {
@@ -89,21 +103,26 @@ router.get("/search", async (req, res): Promise<void> => {
     return;
   }
 
-  const q = `%${query.data.q}%`;
-  const agents = await db
-    .select()
-    .from(agentsTable)
-    .where(
-      or(
-        ilike(agentsTable.tags, q),
-        ilike(agentsTable.description, q),
-        ilike(agentsTable.agentName, q),
-        ilike(agentsTable.serviceTitle, q)
+  try {
+    const q = `%${query.data.q}%`;
+    const agents = await db
+      .select()
+      .from(agentsTable)
+      .where(
+        or(
+          ilike(agentsTable.tags, q),
+          ilike(agentsTable.description, q),
+          ilike(agentsTable.agentName, q),
+          ilike(agentsTable.serviceTitle, q)
+        )
       )
-    )
-    .orderBy(desc(agentsTable.createdAt));
+      .orderBy(desc(agentsTable.createdAt));
 
-  res.json(SearchAgentsResponse.parse(agents));
+    res.json(SearchAgentsResponse.parse(agents));
+  } catch (err) {
+    console.error("Failed to search agents:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 export default router;

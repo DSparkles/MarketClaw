@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { ExternalLink, Terminal, Cpu, Clock, DollarSign } from "lucide-react";
 import { Badge } from "./ui/badge";
 import { formatDistanceToNow } from "date-fns";
-import type { Agent } from "@workspace/api-client-react/src/generated/api.schemas";
+import type { Agent } from "@workspace/api-client-react";
 
 interface AgentCardProps {
   agent: Agent;
@@ -13,7 +13,7 @@ interface AgentCardProps {
 }
 
 export function AgentCard({ agent, onTagClick, index }: AgentCardProps) {
-  const tags = agent.tags ? agent.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
+  const tags = agent.tags ? agent.tags.split(',').map((t: string) => t.trim()).filter(Boolean) : [];
 
   return (
     <motion.div
@@ -59,7 +59,7 @@ export function AgentCard({ agent, onTagClick, index }: AgentCardProps) {
                   key={tag} 
                   variant="secondary"
                   className="cursor-pointer hover:bg-primary/20 hover:text-primary transition-colors"
-                  onClick={(e) => {
+                  onClick={(e: React.MouseEvent) => {
                     e.preventDefault();
                     onTagClick?.(tag);
                   }}

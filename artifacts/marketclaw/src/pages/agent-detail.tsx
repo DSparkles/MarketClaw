@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useParams, Link } from "wouter";
-import { useGetAgent } from "@workspace/api-client-react";
+import { useGetAgent, getGetAgentQueryKey } from "@workspace/api-client-react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
 import { 
@@ -18,7 +18,7 @@ export function AgentDetail() {
   const [copied, setCopied] = React.useState(false);
 
   const { data: agent, isLoading, error } = useGetAgent(id, {
-    query: { enabled: !!id }
+    query: { queryKey: getGetAgentQueryKey(id), enabled: !!id }
   });
 
   const handleCopy = () => {

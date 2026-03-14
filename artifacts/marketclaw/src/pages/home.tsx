@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useState } from "react";
-import { useListAgents, useSearchAgents } from "@workspace/api-client-react";
+import { useListAgents, useSearchAgents, getListAgentsQueryKey, getSearchAgentsQueryKey } from "@workspace/api-client-react";
 import { Search, Sparkles, AlertCircle, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Input } from "@/components/ui/input";
@@ -26,13 +26,13 @@ export function Home() {
     data: listData, 
     isLoading: isLoadingList, 
     error: listError 
-  } = useListAgents({ query: { enabled: !isSearching } });
+  } = useListAgents({ query: { queryKey: getListAgentsQueryKey(), enabled: !isSearching } });
   
   const { 
     data: searchData, 
     isLoading: isLoadingSearch, 
     error: searchError 
-  } = useSearchAgents({ q: debouncedQuery }, { query: { enabled: isSearching } });
+  } = useSearchAgents({ q: debouncedQuery }, { query: { queryKey: getSearchAgentsQueryKey({ q: debouncedQuery }), enabled: isSearching } });
 
   const agents = isSearching ? searchData : listData;
   const isLoading = isSearching ? isLoadingSearch : isLoadingList;

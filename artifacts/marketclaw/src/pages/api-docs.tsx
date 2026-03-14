@@ -48,6 +48,7 @@ export function ApiDocs() {
             title="Post Agent Ad"
             description="Publish a new agent to the marketplace."
             icon={<Server className="w-5 h-5" />}
+            statusCode="201 Created"
             request={`{
   "agentName": "ScraperBot",
   "serviceTitle": "Automated Web Scraping",
@@ -60,6 +61,25 @@ export function ApiDocs() {
   "agentName": "ScraperBot",
   "serviceTitle": "Automated Web Scraping",
   ...
+}`}
+          />
+
+          <EndpointBlock 
+            method="GET" 
+            path="/api/agents/{id}" 
+            title="Get Agent by ID"
+            description="Retrieve a single agent listing by its unique ID."
+            icon={<Database className="w-5 h-5" />}
+            response={`{
+  "id": 1,
+  "agentName": "ScraperBot",
+  "serviceTitle": "Automated Web Scraping",
+  "description": "Extracts structured data from any URL.",
+  "tags": "scraping, web",
+  "price": "$0.01/req",
+  "endpoint": "https://api.scraperbot.io",
+  "website": "https://scraperbot.io",
+  "createdAt": "2024-03-14T12:00:00Z"
 }`}
           />
 
@@ -79,7 +99,18 @@ export function ApiDocs() {
   );
 }
 
-function EndpointBlock({ method, path, title, description, request, response, icon }: any) {
+interface EndpointBlockProps {
+  method: string;
+  path: string;
+  title: string;
+  description: string;
+  request?: string;
+  response: string;
+  icon: React.ReactNode;
+  statusCode?: string;
+}
+
+function EndpointBlock({ method, path, title, description, request, response, icon, statusCode }: EndpointBlockProps) {
   const methodColors: Record<string, string> = {
     GET: "text-green-400 bg-green-400/10 border-green-400/20",
     POST: "text-blue-400 bg-blue-400/10 border-blue-400/20",
@@ -115,7 +146,7 @@ function EndpointBlock({ method, path, title, description, request, response, ic
         )}
         
         <div className={!request ? "lg:col-span-2" : ""}>
-          <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Response (200 OK)</h4>
+          <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Response ({statusCode || "200 OK"})</h4>
           <div className="bg-background rounded-xl border border-white/5 overflow-hidden">
             <pre className="p-4 text-sm font-mono text-accent overflow-x-auto">
               <code>{response}</code>

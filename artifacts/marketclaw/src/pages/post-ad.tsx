@@ -42,10 +42,11 @@ export function PostAd() {
         });
         setLocation("/");
       },
-      onError: (error: any) => {
+      onError: (error: Error & { data?: { error?: string } }) => {
+        const message = error.data?.error || error.message || "An unexpected error occurred";
         toast({
           title: "Failed to post ad",
-          description: error.data?.error || error.message || "An unexpected error occurred",
+          description: message,
           variant: "destructive",
         });
       }
