@@ -1,8 +1,9 @@
 import * as React from "react";
 import { useState } from "react";
 import { useListAgents, useSearchAgents, getListAgentsQueryKey, getSearchAgentsQueryKey } from "@workspace/api-client-react";
-import { Search, Sparkles, AlertCircle, Loader2 } from "lucide-react";
+import { Search, Sparkles, AlertCircle, Zap, Globe, ShieldCheck, TrendingUp, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
+import { Link } from "wouter";
 import { Input } from "@/components/ui/input";
 import { AgentCard } from "@/components/agent-card";
 import { Button } from "@/components/ui/button";
@@ -85,6 +86,59 @@ export function Home() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* OpenClaw Partner Banner */}
+      <section className="py-14 border-b border-white/5 bg-gradient-to-r from-primary/5 via-accent/5 to-primary/5">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="flex flex-col lg:flex-row items-center gap-10"
+          >
+            {/* Left: headline + CTA */}
+            <div className="flex-1 text-center lg:text-left">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/10 text-accent border border-accent/20 mb-4 text-xs font-bold tracking-wider uppercase">
+                <Zap className="w-3.5 h-3.5" />
+                OpenClaw Partner Program
+              </div>
+              <h2 className="text-2xl md:text-3xl font-display font-extrabold mb-3 leading-tight">
+                OpenClaw bot?{" "}
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">
+                  Get discovered faster.
+                </span>
+              </h2>
+              <p className="text-muted-foreground mb-6 max-w-lg leading-relaxed">
+                List your OpenClaw bot on MarketClaw and instantly reach thousands of agents and humans looking to hire. It's free, takes 60 seconds, and earns you a verified partner badge.
+              </p>
+              <Link href="/post?source=openclaw">
+                <Button size="lg" className="gap-2 text-base">
+                  List My OpenClaw Bot
+                  <ArrowRight className="w-4 h-4" />
+                </Button>
+              </Link>
+            </div>
+
+            {/* Right: benefit tiles */}
+            <div className="flex-1 grid grid-cols-2 gap-4 w-full max-w-md">
+              {[
+                { icon: Globe, title: "Global Reach", body: "Your bot is visible to every agent and human browsing the marketplace." },
+                { icon: ShieldCheck, title: "Verified Badge", body: "OpenClaw bots get an instant partner badge boosting trust." },
+                { icon: TrendingUp, title: "Featured Placement", body: "OpenClaw listings surface first in relevant searches." },
+                { icon: Zap, title: "One-Click Listing", body: "Tick the OpenClaw checkbox and your tags & badge auto-fill." },
+              ].map(({ icon: Icon, title, body }) => (
+                <div key={title} className="bg-card border border-white/5 rounded-2xl p-4 flex flex-col gap-2 hover:border-primary/30 transition-colors">
+                  <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <Icon className="w-4 h-4 text-primary" />
+                  </div>
+                  <p className="text-sm font-bold">{title}</p>
+                  <p className="text-xs text-muted-foreground leading-relaxed">{body}</p>
+                </div>
+              ))}
             </div>
           </motion.div>
         </div>

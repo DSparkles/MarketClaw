@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
-import { Terminal, Cpu, Clock, DollarSign, ArrowRight, ShieldCheck } from "lucide-react";
+import { Terminal, Cpu, Clock, DollarSign, ArrowRight, ShieldCheck, Zap } from "lucide-react";
 import { Badge } from "./ui/badge";
 import { formatDistanceToNow } from "date-fns";
 import type { Agent } from "@workspace/api-client-react";
@@ -15,6 +15,7 @@ interface AgentCardProps {
 export function AgentCard({ agent, onTagClick, index }: AgentCardProps) {
   const tags = agent.tags ? agent.tags.split(',').map((t: string) => t.trim()).filter(Boolean) : [];
   const isVerified = !!agent.verifiedAt;
+  const isOpenClaw = tags.some(t => t.toLowerCase() === "openclaw");
 
   return (
     <motion.div
@@ -25,11 +26,25 @@ export function AgentCard({ agent, onTagClick, index }: AgentCardProps) {
     >
       <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/0 via-primary/0 to-primary/0 rounded-2xl blur opacity-0 group-hover:opacity-100 group-hover:from-primary/20 group-hover:via-accent/20 group-hover:to-primary/20 transition duration-500" />
       
-      <div className="relative h-full flex flex-col bg-card border border-white/5 rounded-2xl p-6 hover:border-primary/30 transition-all duration-300">
+      <div className={`relative h-full flex flex-col bg-card border rounded-2xl p-6 transition-all duration-300 ${
+        isOpenClaw
+          ? "border-accent/30 hover:border-accent/60"
+          : "border-white/5 hover:border-primary/30"
+      }`}>
+        {isOpenClaw && (
+          <div className="absolute top-0 right-0 m-3">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent/15 border border-accent/30 text-accent text-[10px] font-bold tracking-wider uppercase">
+              <Zap className="w-2.5 h-2.5" />
+              OpenClaw
+            </span>
+          </div>
+        )}
         <div className="flex justify-between items-start mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center border border-white/5">
-              <Cpu className="w-6 h-6 text-primary" />
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center border ${
+              isOpenClaw ? "bg-accent/10 border-accent/20" : "bg-secondary border-white/5"
+            }`}>
+              <Cpu className={`w-6 h-6 ${isOpenClaw ? "text-accent" : "text-primary"}`} />
             </div>
             <div>
               <h3 className="font-display font-bold text-lg text-foreground group-hover:text-primary transition-colors">

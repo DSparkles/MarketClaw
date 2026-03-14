@@ -1,12 +1,12 @@
 import * as React from "react";
-import { useLocation } from "wouter";
+import { useLocation, useSearch } from "wouter";
 import { useCreateAgent, useVerifyAgent, getListAgentsQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { motion, AnimatePresence } from "framer-motion";
-import { Terminal, Cpu, Tag, DollarSign, Globe, FileText, User, ShieldCheck, ShieldX, Loader2, CheckCircle2 } from "lucide-react";
+import { Terminal, Cpu, Tag, DollarSign, Globe, FileText, User, ShieldCheck, ShieldX, Loader2, CheckCircle2, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -29,10 +29,12 @@ type VerifyState = "idle" | "verifying" | "verified" | "unreachable" | "done";
 
 export function PostAd() {
   const [, setLocation] = useLocation();
+  const search = useSearch();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [verifyState, setVerifyState] = React.useState<VerifyState>("idle");
   const [createdId, setCreatedId] = React.useState<number | null>(null);
+  const [isOpenClaw, setIsOpenClaw] = React.useState(() => new URLSearchParams(search).get("source") === "openclaw");
 
   const { mutate: verifyAgent } = useVerifyAgent({
     mutation: {
@@ -84,8 +86,17 @@ export function PostAd() {
   });
 
   const onSubmit = (data: FormValues) => {
+    let tags = data.tags;
+    if (isOpenClaw) {
+      const tagList = tags.split(',').map(t => t.trim()).filter(Boolean);
+      if (!tagList.map(t => t.toLowerCase()).includes("openclaw")) {
+        tagList.unshift("openclaw");
+      }
+      tags = tagList.join(", ");
+    }
     const formattedData = {
       ...data,
+      tags,
       price: data.price?.trim() || null,
       website: data.website?.trim() || null,
     };
@@ -107,6 +118,38 @@ export function PostAd() {
             Broadcast your autonomous agent's capabilities to the network. Your endpoint will be pinged automatically to confirm it's live.
           </p>
         </div>
+
+        {/* OpenClaw toggle banner */}
+        <button
+          type="button"
+          onClick={() => setIsOpenClaw(v => !v)}
+          className={`w-full mb-6 flex items-center gap-4 px-5 py-4 rounded-2xl border-2 text-left transition-all duration-200 ${
+            isOpenClaw
+              ? "border-accent/50 bg-accent/10"
+              : "border-white/10 bg-card hover:border-white/20"
+          }`}
+        >
+          {/* Custom checkbox */}
+          <div className={`w-6 h-6 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+            isOpenClaw ? "border-accent bg-accent" : "border-white/30 bg-transparent"
+          }`}>
+            {isOpenClaw && <ShieldCheck className="w-4 h-4 text-black" />}
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-0.5">
+              <Zap className={`w-4 h-4 ${isOpenClaw ? "text-accent" : "text-muted-foreground"}`} />
+              <span className={`font-bold text-sm ${isOpenClaw ? "text-accent" : "text-foreground"}`}>
+                This is an OpenClaw bot
+              </span>
+              <span className="text-xs px-2 py-0.5 rounded-full bg-accent/15 text-accent border border-accent/20 font-semibold">
+                Partner Program
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Adds the OpenClaw partner badge to your listing and surfaces it first in relevant searches.
+            </p>
+          </div>
+        </button>
 
         {/* Verification status overlay */}
         <AnimatePresence>
