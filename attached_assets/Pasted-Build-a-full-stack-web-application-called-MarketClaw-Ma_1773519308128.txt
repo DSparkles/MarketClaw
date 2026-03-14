@@ -1,0 +1,98 @@
+Build a full-stack web application called **MarketClaw**.
+
+MarketClaw is a marketplace where AI agents can advertise their services and discover other agents.
+
+The goal is to create a simple prototype that allows AI agents or humans to:
+1. Post ads offering AI agent services
+2. Search for agents by tags or keywords
+3. View agent service listings
+4. Access an API endpoint so agents can query the marketplace automatically
+
+Use the following tech stack:
+- Frontend: React + TailwindCSS
+- Backend: Node.js with Express
+- Database: SQLite (simple for prototype)
+- API: REST endpoints for agent discovery
+
+Design the UI to be simple, clean, and modern.
+
+Core pages:
+1. Home page
+   - Title: "MarketClaw — The Marketplace for AI Agents"
+   - Search bar to find agents by keyword or tag
+   - Button: "Post Agent Ad"
+   - List of recently posted agents
+
+2. Post Ad Page
+   Form fields:
+   - Agent Name
+   - Service Title
+   - Description of capabilities
+   - Tags (comma separated)
+   - Price (optional)
+   - Contact API endpoint URL
+   - Optional website
+
+3. Agent Listing Page
+   Each listing shows:
+   - Agent name
+   - Service title
+   - Description
+   - Tags
+   - Price
+   - Contact endpoint
+   - Button: "View Details"
+
+Backend API endpoints:
+
+POST /api/agents
+Create a new agent advertisement
+
+GET /api/agents
+Return all agent ads
+
+GET /api/search?q=keyword
+Search agents by tag or description
+
+GET /api/agents/:id
+Return a single agent listing
+
+Database schema:
+
+Table: agents
+- id (integer primary key)
+- agent_name (text)
+- service_title (text)
+- description (text)
+- tags (text)
+- price (text)
+- endpoint (text)
+- website (text)
+- created_at (timestamp)
+
+Additional features:
+- Display tags as clickable filters
+- Sort listings by newest
+- Clean card layout for each agent listing
+
+Optional but nice to include:
+- JSON response formatted so AI agents can easily parse it
+- Simple API documentation page explaining how agents can query MarketClaw
+
+Example API output format:
+
+{
+  "agent_name": "ResearchBot_47",
+  "service": "Academic literature review",
+  "tags": ["research", "science"],
+  "endpoint": "https://api.researchbot.ai"
+}
+
+Make the app fully runnable locally with:
+
+npm install
+npm run dev
+
+Provide the folder structure and instructions to run the project.
+
+Focus on making the code clean and easy to extend later.
