@@ -15,6 +15,22 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 
 type RequestStatus = "idle" | "sending" | "success" | "error";
+type ContactMode = "simple" | "json";
+
+interface SimpleForm {
+  name: string;
+  email: string;
+  task: string;
+  context: string;
+}
+
+function simpleFormToPayload(form: SimpleForm): string {
+  const obj: Record<string, string> = { task: form.task };
+  if (form.name.trim()) obj.name = form.name.trim();
+  if (form.email.trim()) obj.email = form.email.trim();
+  if (form.context.trim()) obj.context = form.context.trim();
+  return JSON.stringify(obj, null, 2);
+}
 
 export function AgentDetail() {
   const params = useParams();
@@ -23,6 +39,8 @@ export function AgentDetail() {
   const queryClient = useQueryClient();
   const [copied, setCopied] = React.useState(false);
   const [verifying, setVerifying] = React.useState(false);
+  const [contactMode, setContactMode] = React.useState<ContactMode>("simple");
+  const [simpleForm, setSimpleForm] = React.useState<SimpleForm>({ name: "", email: "", task: "", context: "" });
   const [payload, setPayload] = React.useState('{\n  "task": ""\n}');
   const [payloadError, setPayloadError] = React.useState<string | null>(null);
   const [requestStatus, setRequestStatus] = React.useState<RequestStatus>("idle");
@@ -89,15 +107,36 @@ export function AgentDetail() {
   const handleSendRequest = () => {
     setPayloadError(null);
     let parsed: Record<string, unknown>;
-    try {
-      parsed = JSON.parse(payload) as Record<string, unknown>;
-    } catch {
-      setPayloadError("Invalid JSON — please fix your payload before sending.");
-      return;
+
+    if (contactMode === "simple") {
+      if (!simpleForm.task.trim()) {
+        setPayloadError("Please describe what you need the agent to do.");
+        return;
+      }
+      parsed = JSON.parse(simpleFormToPayload(simpleForm)) as Record<string, unknown>;
+    } else {
+      try {
+        parsed = JSON.parse(payload) as Record<string, unknown>;
+      } catch {
+        setPayloadError("Invalid JSON — please fix your payload before sending.");
+        return;
+      }
     }
+
     setRequestStatus("sending");
     setResponseData(null);
     sendRequest({ id, data: { payload: parsed } });
+  };
+
+  const switchToJson = () => {
+    setPayload(simpleFormToPayload(simpleForm));
+    setContactMode("json");
+    setPayloadError(null);
+  };
+
+  const switchToSimple = () => {
+    setContactMode("simple");
+    setPayloadError(null);
   };
 
   const isVerified = !!agent?.verifiedAt;
@@ -254,40 +293,123 @@ export function AgentDetail() {
 
         {/* Contact / Hire Panel */}
         <div className="glass-panel rounded-3xl overflow-hidden">
-          <div className="px-8 py-6 border-b border-white/5 flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-display font-bold flex items-center gap-2">
-                <Send className="w-5 h-5 text-primary" />
-                Contact Agent
-              </h2>
-              <p className="text-muted-foreground text-sm mt-1">
-                Send a JSON payload directly to this agent's endpoint and see the real response.
-              </p>
+          <div className="px-8 py-6 border-b border-white/5">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-display font-bold flex items-center gap-2">
+                  <Send className="w-5 h-5 text-primary" />
+                  Contact / Hire Agent
+                </h2>
+                <p className="text-muted-foreground text-sm mt-1">
+                  Describe what you need and send it directly to this agent.
+                </p>
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {!isVerified && (
+                  <span className="inline-flex items-center gap-1.5 text-xs text-amber-400 bg-amber-400/10 border border-amber-400/20 rounded-full px-3 py-1.5">
+                    <ShieldX className="w-3.5 h-3.5" />
+                    Not verified
+                  </span>
+                )}
+              </div>
             </div>
-            {!isVerified && (
-              <span className="inline-flex items-center gap-1.5 text-xs text-amber-400 bg-amber-400/10 border border-amber-400/20 rounded-full px-3 py-1.5">
-                <ShieldX className="w-3.5 h-3.5" />
-                Not yet verified
-              </span>
-            )}
+
+            {/* Mode tabs */}
+            <div className="flex gap-1 mt-5 bg-black/30 rounded-xl p-1 w-fit">
+              <button
+                onClick={switchToSimple}
+                className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors ${
+                  contactMode === "simple"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Simple Form
+              </button>
+              <button
+                onClick={switchToJson}
+                className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors ${
+                  contactMode === "json"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                JSON Editor
+              </button>
+            </div>
           </div>
 
           <div className="p-8 space-y-6">
-            {/* Payload composer */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="text-sm font-bold flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-primary" />
-                  Request Payload (JSON)
-                </label>
-                <button
-                  onClick={() => setPayload('{\n  "task": ""\n}')}
-                  className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  Reset
-                </button>
+
+            {contactMode === "simple" ? (
+              <div className="space-y-5">
+                {/* Name + Email row */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-semibold text-foreground/80">Your name <span className="text-muted-foreground font-normal">(optional)</span></label>
+                    <input
+                      type="text"
+                      value={simpleForm.name}
+                      onChange={e => setSimpleForm(f => ({ ...f, name: e.target.value }))}
+                      placeholder="e.g. Alex Johnson"
+                      className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-colors placeholder:text-muted-foreground/50"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-semibold text-foreground/80">Your email <span className="text-muted-foreground font-normal">(optional)</span></label>
+                    <input
+                      type="email"
+                      value={simpleForm.email}
+                      onChange={e => setSimpleForm(f => ({ ...f, email: e.target.value }))}
+                      placeholder="e.g. alex@example.com"
+                      className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-colors placeholder:text-muted-foreground/50"
+                    />
+                  </div>
+                </div>
+
+                {/* Task */}
+                <div className="space-y-1.5">
+                  <label className="text-sm font-semibold text-foreground/80">
+                    What do you need? <span className="text-destructive">*</span>
+                  </label>
+                  <textarea
+                    value={simpleForm.task}
+                    onChange={e => {
+                      setSimpleForm(f => ({ ...f, task: e.target.value }));
+                      setPayloadError(null);
+                    }}
+                    rows={4}
+                    placeholder={`Describe your task for ${agent?.agentName ?? "this agent"}…`}
+                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-foreground focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 resize-y transition-colors placeholder:text-muted-foreground/50"
+                  />
+                </div>
+
+                {/* Context */}
+                <div className="space-y-1.5">
+                  <label className="text-sm font-semibold text-foreground/80">Additional context <span className="text-muted-foreground font-normal">(optional)</span></label>
+                  <textarea
+                    value={simpleForm.context}
+                    onChange={e => setSimpleForm(f => ({ ...f, context: e.target.value }))}
+                    rows={3}
+                    placeholder="Any background info, constraints, or preferences…"
+                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-foreground focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 resize-y transition-colors placeholder:text-muted-foreground/50"
+                  />
+                </div>
               </div>
-              <div className="relative">
+            ) : (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-bold flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-primary" />
+                    Request Payload (JSON)
+                  </label>
+                  <button
+                    onClick={() => setPayload('{\n  "task": ""\n}')}
+                    className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Reset
+                  </button>
+                </div>
                 <textarea
                   value={payload}
                   onChange={e => {
@@ -296,13 +418,14 @@ export function AgentDetail() {
                   }}
                   rows={8}
                   spellCheck={false}
-                  className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 font-mono text-sm text-accent focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 resize-y transition-colors placeholder:text-muted-foreground/50"
+                  className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 font-mono text-sm text-accent focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 resize-y transition-colors"
                 />
               </div>
-              {payloadError && (
-                <p className="text-sm text-destructive font-medium">{payloadError}</p>
-              )}
-            </div>
+            )}
+
+            {payloadError && (
+              <p className="text-sm text-destructive font-medium">{payloadError}</p>
+            )}
 
             <div className="flex items-center gap-4">
               <Button
@@ -362,8 +485,7 @@ export function AgentDetail() {
             )}
 
             <p className="text-xs text-muted-foreground">
-              Requests are proxied through MarketClaw's server. The agent receives{" "}
-              <code className="text-accent">Content-Type: application/json</code> and a{" "}
+              Requests are proxied through MarketClaw's server. The agent receives your message as JSON with a{" "}
               <code className="text-accent">X-MarketClaw-Request: true</code> header.
             </p>
           </div>
