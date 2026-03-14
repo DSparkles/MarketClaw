@@ -8,11 +8,59 @@ import {
   ArrowLeft, Cpu, Terminal, DollarSign, Globe, 
   Calendar, Check, Copy, ExternalLink, FileText,
   ShieldCheck, ShieldX, Loader2, Send, RefreshCw,
-  Clock, ChevronDown, ChevronUp
+  Clock, ChevronDown, ChevronUp, Code, AlignLeft
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+
+/** Extract the most human-readable text string from an API response body. */
+function extractReadable(rawBody: string): { text: string; isStructured: boolean } {
+  if (!rawBody.trim()) return { text: "(empty response)", isStructured: false };
+
+  // Try JSON first
+  try {
+    const parsed = JSON.parse(rawBody);
+    // Look for known text fields, in priority order
+    const TEXT_KEYS = [
+      "output", "result", "text", "message", "content", "response",
+      "answer", "reply", "body", "summary", "description", "data",
+    ];
+    for (const key of TEXT_KEYS) {
+      const val = (parsed as Record<string, unknown>)[key];
+      if (typeof val === "string" && val.trim()) {
+        return { text: val.trim(), isStructured: true };
+      }
+      // one level deep
+      if (val && typeof val === "object") {
+        for (const k2 of TEXT_KEYS) {
+          const v2 = (val as Record<string, unknown>)[k2];
+          if (typeof v2 === "string" && v2.trim()) {
+            return { text: v2.trim(), isStructured: true };
+          }
+        }
+      }
+    }
+    // No text field found — stringify neatly so it's at least readable
+    return { text: JSON.stringify(parsed, null, 2), isStructured: true };
+  } catch {
+    // Not JSON — try stripping HTML
+  }
+
+  // Strip HTML tags if it looks like HTML
+  if (/<[a-z][\s\S]*>/i.test(rawBody)) {
+    // Create a temporary div to decode HTML entities and strip tags
+    const div = document.createElement("div");
+    div.innerHTML = rawBody;
+    // Remove script/style nodes
+    div.querySelectorAll("script,style,noscript").forEach(n => n.remove());
+    const plain = (div.textContent ?? div.innerText ?? "").replace(/\s+/g, " ").trim();
+    if (plain) return { text: plain.slice(0, 4000), isStructured: false };
+  }
+
+  // Plain text fallback
+  return { text: rawBody.trim(), isStructured: false };
+}
 
 type RequestStatus = "idle" | "sending" | "success" | "error";
 type ContactMode = "simple" | "json";
@@ -50,6 +98,7 @@ export function AgentDetail() {
     durationMs: number;
   } | null>(null);
   const [responseExpanded, setResponseExpanded] = React.useState(true);
+  const [rawView, setRawView] = React.useState(false);
 
   const { data: agent, isLoading, error } = useGetAgent(id, {
     query: { queryKey: getGetAgentQueryKey(id), enabled: !!id }
@@ -81,6 +130,7 @@ export function AgentDetail() {
         setRequestStatus("success");
         setResponseData({ statusCode: data.statusCode, rawBody: data.rawBody ?? "", durationMs: data.durationMs });
         setResponseExpanded(true);
+        setRawView(false);
       },
       onError: (err: Error & { data?: { error?: string }; status?: number }) => {
         setRequestStatus("error");
@@ -458,29 +508,79 @@ export function AgentDetail() {
                 animate={{ opacity: 1, height: "auto" }}
                 className="rounded-2xl border border-white/10 overflow-hidden"
               >
-                <button
-                  onClick={() => setResponseExpanded(v => !v)}
-                  className="w-full flex items-center justify-between px-5 py-3 bg-black/30 text-sm font-bold hover:bg-black/40 transition-colors"
-                >
-                  <span className="flex items-center gap-2">
-                    Response
-                    <span className={`font-mono text-xs px-2 py-0.5 rounded ${statusColor(responseData.statusCode)} bg-white/5`}>
-                      {responseData.statusCode}
+                {/* Header bar */}
+                <div className="flex items-center justify-between px-5 py-3 bg-black/30 border-b border-white/5">
+                  <button
+                    onClick={() => setResponseExpanded(v => !v)}
+                    className="flex items-center gap-2 text-sm font-bold hover:text-foreground/80 transition-colors"
+                  >
+                    <span className="flex items-center gap-2">
+                      Response
+                      <span className={`font-mono text-xs px-2 py-0.5 rounded ${statusColor(responseData.statusCode)} bg-white/5`}>
+                        {responseData.statusCode}
+                      </span>
                     </span>
-                  </span>
-                  {responseExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                </button>
-                {responseExpanded && (
-                  <pre className="p-5 text-sm font-mono text-white/80 overflow-x-auto max-h-80 overflow-y-auto bg-black/20">
-                    {(() => {
-                      try {
-                        return JSON.stringify(JSON.parse(responseData.rawBody), null, 2);
-                      } catch {
-                        return responseData.rawBody || "(empty response)";
-                      }
-                    })()}
-                  </pre>
-                )}
+                    {responseExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  </button>
+
+                  {/* Readable / Raw toggle */}
+                  {responseExpanded && (
+                    <div className="flex gap-1 bg-black/40 rounded-lg p-0.5">
+                      <button
+                        onClick={() => setRawView(false)}
+                        className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold transition-colors ${
+                          !rawView ? "bg-white/10 text-foreground" : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        <AlignLeft className="w-3 h-3" /> Readable
+                      </button>
+                      <button
+                        onClick={() => setRawView(true)}
+                        className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold transition-colors ${
+                          rawView ? "bg-white/10 text-foreground" : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        <Code className="w-3 h-3" /> Raw
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {responseExpanded && (() => {
+                  if (rawView) {
+                    // Raw code view
+                    const raw = (() => {
+                      try { return JSON.stringify(JSON.parse(responseData.rawBody), null, 2); }
+                      catch { return responseData.rawBody || "(empty response)"; }
+                    })();
+                    return (
+                      <pre className="p-5 text-sm font-mono text-accent overflow-x-auto max-h-80 overflow-y-auto bg-black/20 leading-relaxed">
+                        {raw}
+                      </pre>
+                    );
+                  }
+
+                  // Readable view
+                  const { text, isStructured } = extractReadable(responseData.rawBody);
+                  const isError = responseData.statusCode >= 400;
+                  return (
+                    <div className={`p-5 max-h-96 overflow-y-auto ${isError ? "bg-red-950/20" : "bg-black/10"}`}>
+                      {isError && (
+                        <p className="text-xs font-bold text-red-400 uppercase tracking-wider mb-3">
+                          Error response
+                        </p>
+                      )}
+                      {!isError && !isStructured && (
+                        <p className="text-xs text-muted-foreground mb-3 italic">
+                          The agent returned a web page — showing extracted text.
+                        </p>
+                      )}
+                      <p className="text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed">
+                        {text}
+                      </p>
+                    </div>
+                  );
+                })()}
               </motion.div>
             )}
 
