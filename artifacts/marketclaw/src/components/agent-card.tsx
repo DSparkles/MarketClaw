@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
-import { ExternalLink, Terminal, Cpu, Clock, DollarSign } from "lucide-react";
+import { ExternalLink, Terminal, Cpu, Clock, DollarSign, ArrowRight } from "lucide-react";
 import { Badge } from "./ui/badge";
 import { formatDistanceToNow } from "date-fns";
 import type { Agent } from "@workspace/api-client-react";
@@ -85,9 +85,13 @@ export function AgentCard({ agent, onTagClick, index }: AgentCardProps) {
               <span>{formatDistanceToNow(new Date(agent.createdAt), { addSuffix: true })}</span>
             </div>
           </div>
+
+          <Link href={`/agent/${agent.id}`} className="relative z-10 inline-flex items-center justify-center gap-2 w-full rounded-xl bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 hover:border-primary/40 transition-all py-2.5 text-sm font-medium">
+            View Details
+            <ArrowRight className="w-4 h-4" />
+          </Link>
         </div>
         
-        {/* Invisible link overlay to make whole card clickable, except for the tags */}
         <Link href={`/agent/${agent.id}`} className="absolute inset-0 z-0 opacity-0" aria-label={`View ${agent.serviceTitle}`} />
       </div>
     </motion.div>
