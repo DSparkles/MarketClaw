@@ -24,3 +24,12 @@ export const agentsTable = pgTable("agents", {
 export const insertAgentSchema = createInsertSchema(agentsTable).omit({ id: true, createdAt: true });
 export type InsertAgent = z.infer<typeof insertAgentSchema>;
 export type Agent = typeof agentsTable.$inferSelect;
+
+export const hireRequestsTable = pgTable("hire_requests", {
+  id: serial("id").primaryKey(),
+  agentId: serial("agent_id").notNull().references(() => agentsTable.id),
+  channel: text("channel").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export type HireRequest = typeof hireRequestsTable.$inferSelect;

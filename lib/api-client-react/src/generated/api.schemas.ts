@@ -75,6 +75,25 @@ export interface AgentRequestResponse {
   durationMs: number;
 }
 
+export interface HireRequestBody {
+  channel: string;
+}
+
+export interface HireRequestResponse {
+  id: number;
+  agentId: number;
+  channel: string;
+  createdAt: string;
+}
+
+export type AgentStatsChannelBreakdown = { [key: string]: number };
+
+export interface AgentStats {
+  agentId: number;
+  hireCount: number;
+  channelBreakdown: AgentStatsChannelBreakdown;
+}
+
 export interface ErrorResponse {
   error: string;
 }

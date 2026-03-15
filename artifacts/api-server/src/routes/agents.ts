@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
-import { eq, desc, or, ilike } from "drizzle-orm";
-import { db, agentsTable } from "@workspace/db";
+import { eq, desc, or, ilike, count, sql } from "drizzle-orm";
+import { db, agentsTable, hireRequestsTable } from "@workspace/db";
 import {
   CreateAgentBody,
   GetAgentParams,
@@ -351,6 +351,73 @@ router.post("/agents/:id/request", async (req, res): Promise<void> => {
     });
   } catch (err) {
     console.error("Failed to proxy agent request:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.post("/agents/:id/hire", async (req, res): Promise<void> => {
+  const params = IdParam.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: "Invalid agent ID" });
+    return;
+  }
+
+  const body = z.object({ channel: z.string().min(1) }).safeParse(req.body);
+  if (!body.success) {
+    res.status(400).json({ error: "channel is required" });
+    return;
+  }
+
+  try {
+    const [agent] = await db.select({ id: agentsTable.id }).from(agentsTable).where(eq(agentsTable.id, params.data.id));
+    if (!agent) {
+      res.status(404).json({ error: "Agent not found" });
+      return;
+    }
+
+    const [hire] = await db.insert(hireRequestsTable).values({
+      agentId: params.data.id,
+      channel: body.data.channel,
+    }).returning();
+
+    res.status(201).json(hire);
+  } catch (err) {
+    console.error("Failed to log hire request:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.get("/agents/:id/stats", async (req, res): Promise<void> => {
+  const params = IdParam.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: "Invalid agent ID" });
+    return;
+  }
+
+  try {
+    const [agent] = await db.select({ id: agentsTable.id }).from(agentsTable).where(eq(agentsTable.id, params.data.id));
+    if (!agent) {
+      res.status(404).json({ error: "Agent not found" });
+      return;
+    }
+
+    const rows = await db
+      .select({ channel: hireRequestsTable.channel, cnt: count() })
+      .from(hireRequestsTable)
+      .where(eq(hireRequestsTable.agentId, params.data.id))
+      .groupBy(hireRequestsTable.channel);
+
+    const channelBreakdown: Record<string, number> = {};
+    let hireCount = 0;
+    for (const row of rows) {
+      const n = Number(row.cnt);
+      channelBreakdown[row.channel] = n;
+      hireCount += n;
+    }
+
+    res.json({ agentId: params.data.id, hireCount, channelBreakdown });
+  } catch (err) {
+    console.error("Failed to get agent stats:", err);
     res.status(500).json({ error: "Internal server error" });
   }
 });

@@ -1,6 +1,9 @@
 import * as React from "react";
 import { useParams, Link } from "wouter";
-import { useGetAgent, getGetAgentQueryKey, useVerifyAgent } from "@workspace/api-client-react";
+import {
+  useGetAgent, getGetAgentQueryKey, useVerifyAgent,
+  useLogHireRequest, useGetAgentStats, getGetAgentStatsQueryKey,
+} from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
@@ -9,7 +12,7 @@ import {
   Calendar, Check, Copy, ExternalLink,
   ShieldCheck, Loader2, RefreshCw, ArrowRight,
   MousePointerClick, Code2, MessageSquare,
-  Send, Mail, CreditCard,
+  Send, Mail, CreditCard, TrendingUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -26,6 +29,12 @@ export function AgentDetail() {
   const { data: agent, isLoading, error } = useGetAgent(id, {
     query: { queryKey: getGetAgentQueryKey(id), enabled: !!id }
   });
+
+  const { data: stats } = useGetAgentStats(id, {
+    query: { queryKey: getGetAgentStatsQueryKey(id), enabled: !!id }
+  });
+
+  const { mutate: logHire } = useLogHireRequest();
 
   const { mutate: verifyAgent } = useVerifyAgent({
     mutation: {
@@ -60,6 +69,12 @@ export function AgentDetail() {
     verifyAgent({ id });
   };
 
+  // Fire-and-forget hire tracking before opening a link
+  const trackAndOpen = (channel: string, href: string) => {
+    logHire({ id, data: { channel } });
+    window.open(href, "_blank", "noopener,noreferrer");
+  };
+
   const isVerified = !!agent?.verifiedAt;
 
   if (isLoading) {
@@ -90,23 +105,24 @@ export function AgentDetail() {
   const hireUrl = agent.website || agent.endpoint;
   const hireLabel = (() => { try { return new URL(hireUrl).hostname; } catch { return hireUrl; } })();
 
-  // Build contact channels list
-  const contactChannels: { icon: React.ElementType; label: string; value: string; href: string; buttonLabel: string; color: string }[] = [];
+  const contactChannels: { icon: React.ElementType; label: string; value: string; href: string; channel: string; buttonLabel: string; color: string }[] = [];
   if (agent.telegram) {
     const handle = agent.telegram.trim();
     const href = handle.startsWith("http") ? handle
       : handle.startsWith("@") ? `https://t.me/${handle.slice(1)}`
       : `https://t.me/${handle}`;
-    contactChannels.push({ icon: Send, label: "Telegram", value: handle, href, buttonLabel: "Message on Telegram", color: "text-sky-400" });
+    contactChannels.push({ icon: Send, label: "Telegram", value: handle, href, channel: "telegram", buttonLabel: "Message on Telegram", color: "text-sky-400" });
   }
   if (agent.discord) {
     const val = agent.discord.trim();
     const href = val.startsWith("http") ? val : `https://discord.com/users/${val}`;
-    contactChannels.push({ icon: MessageSquare, label: "Discord", value: val, href, buttonLabel: "Contact on Discord", color: "text-indigo-400" });
+    contactChannels.push({ icon: MessageSquare, label: "Discord", value: val, href, channel: "discord", buttonLabel: "Contact on Discord", color: "text-indigo-400" });
   }
   if (agent.contactEmail) {
-    contactChannels.push({ icon: Mail, label: "Email", value: agent.contactEmail, href: `mailto:${agent.contactEmail}`, buttonLabel: "Send Email", color: "text-emerald-400" });
+    contactChannels.push({ icon: Mail, label: "Email", value: agent.contactEmail, href: `mailto:${agent.contactEmail}`, channel: "email", buttonLabel: "Send Email", color: "text-emerald-400" });
   }
+
+  const hireCount = stats?.hireCount ?? 0;
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -130,6 +146,12 @@ export function AgentDetail() {
                 {isVerified && (
                   <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 rounded-full px-3 py-1">
                     <ShieldCheck className="w-3.5 h-3.5" /> Verified
+                  </span>
+                )}
+                {hireCount > 0 && (
+                  <span className="inline-flex items-center gap-1.5 text-xs font-bold text-primary bg-primary/10 border border-primary/20 rounded-full px-3 py-1">
+                    <TrendingUp className="w-3.5 h-3.5" />
+                    {hireCount} hire {hireCount === 1 ? "request" : "requests"}
                   </span>
                 )}
               </div>
@@ -159,7 +181,7 @@ export function AgentDetail() {
             </p>
             <div className="flex items-center gap-3 bg-black/30 rounded-xl px-4 py-3 border border-white/5">
               <code className="text-sm text-accent font-mono flex-1 truncate">{agent.endpoint}</code>
-              <button onClick={handleCopy} className="text-muted-foreground hover:text-foreground transition-colors flex-shrink-0" title="Copy endpoint">
+              <button onClick={handleCopy} className="text-muted-foreground hover:text-foreground transition-colors flex-shrink-0">
                 {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
               </button>
             </div>
@@ -186,6 +208,23 @@ export function AgentDetail() {
                   <ShieldCheck className="w-3.5 h-3.5" /> Last Verified
                 </p>
                 <p className="text-sm text-emerald-300">{format(new Date(agent.verifiedAt), "MMM d, yyyy HH:mm")}</p>
+              </div>
+            )}
+            {stats && (
+              <div>
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 flex items-center gap-2">
+                  <TrendingUp className="w-3.5 h-3.5" /> Hire Activity
+                </p>
+                {hireCount === 0 ? (
+                  <p className="text-sm text-muted-foreground">No requests yet</p>
+                ) : (
+                  <div className="space-y-1">
+                    <p className="text-sm font-semibold">{hireCount} total {hireCount === 1 ? "request" : "requests"}</p>
+                    {Object.entries(stats.channelBreakdown).map(([ch, n]) => (
+                      <p key={ch} className="text-xs text-muted-foreground capitalize">{ch}: {n}</p>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
             {agent.website && (
@@ -226,11 +265,9 @@ export function AgentDetail() {
                 <p className="font-semibold text-sm mb-0.5">Visit the agent's page</p>
                 <p className="text-xs text-muted-foreground truncate">{hireLabel}</p>
               </div>
-              <a href={hireUrl} target="_blank" rel="noopener noreferrer" className="flex-shrink-0">
-                <Button size="lg" className="gap-2">
-                  Open Agent Page <ArrowRight className="w-4 h-4" />
-                </Button>
-              </a>
+              <Button size="lg" className="gap-2 flex-shrink-0" onClick={() => trackAndOpen("website", hireUrl)}>
+                Open Agent Page <ArrowRight className="w-4 h-4" />
+              </Button>
             </div>
 
             {/* Contact channels */}
@@ -238,7 +275,7 @@ export function AgentDetail() {
               <div className="space-y-3">
                 <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Contact Channels</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {contactChannels.map(({ icon: Icon, label, value, href, buttonLabel, color }) => (
+                  {contactChannels.map(({ icon: Icon, label, value, href, channel, buttonLabel, color }) => (
                     <div key={label} className="flex items-center gap-4 p-4 rounded-2xl bg-card border border-white/5 hover:border-white/15 transition-colors">
                       <div className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center flex-shrink-0">
                         <Icon className={`w-4 h-4 ${color}`} />
@@ -247,11 +284,10 @@ export function AgentDetail() {
                         <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-0.5">{label}</p>
                         <p className="text-sm truncate">{value}</p>
                       </div>
-                      <a href={href} target="_blank" rel="noopener noreferrer" className="flex-shrink-0">
-                        <Button size="sm" variant="outline" className="gap-1.5 text-xs">
-                          {buttonLabel} <ExternalLink className="w-3 h-3" />
-                        </Button>
-                      </a>
+                      <Button size="sm" variant="outline" className="gap-1.5 text-xs flex-shrink-0"
+                        onClick={() => trackAndOpen(channel, href)}>
+                        {buttonLabel} <ExternalLink className="w-3 h-3" />
+                      </Button>
                     </div>
                   ))}
                 </div>
@@ -272,11 +308,10 @@ export function AgentDetail() {
                       {(() => { try { return new URL(agent.paymentLink).hostname; } catch { return agent.paymentLink; } })()}
                     </p>
                   </div>
-                  <a href={agent.paymentLink} target="_blank" rel="noopener noreferrer" className="flex-shrink-0">
-                    <Button size="lg" className="gap-2 bg-emerald-600 hover:bg-emerald-500 text-white border-0">
-                      Pay Now <ArrowRight className="w-4 h-4" />
-                    </Button>
-                  </a>
+                  <Button size="lg" className="gap-2 flex-shrink-0 bg-emerald-600 hover:bg-emerald-500 text-white border-0"
+                    onClick={() => trackAndOpen("payment", agent.paymentLink!)}>
+                    Pay Now <ArrowRight className="w-4 h-4" />
+                  </Button>
                 </div>
               </div>
             )}

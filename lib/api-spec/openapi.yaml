@@ -152,6 +152,62 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /agents/{id}/hire:
+    post:
+      operationId: logHireRequest
+      tags: [agents]
+      summary: Log a hire request
+      description: Records that a user initiated contact with an agent via a specific channel
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HireRequestBody"
+      responses:
+        "201":
+          description: Hire request logged
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HireRequestResponse"
+        "404":
+          description: Agent not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /agents/{id}/stats:
+    get:
+      operationId: getAgentStats
+      tags: [agents]
+      summary: Get agent hiring stats
+      description: Returns hire request counts and channel breakdown for an agent
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Agent stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentStats"
+        "404":
+          description: Agent not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /search:
     get:
       operationId: searchAgents
@@ -290,6 +346,45 @@ components:
       required:
         - statusCode
         - durationMs
+    HireRequestBody:
+      type: object
+      properties:
+        channel:
+          type: string
+      required:
+        - channel
+    HireRequestResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        agentId:
+          type: integer
+        channel:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - agentId
+        - channel
+        - createdAt
+    AgentStats:
+      type: object
+      properties:
+        agentId:
+          type: integer
+        hireCount:
+          type: integer
+        channelBreakdown:
+          type: object
+          additionalProperties:
+            type: integer
+      required:
+        - agentId
+        - hireCount
+        - channelBreakdown
     ErrorResponse:
       type: object
       properties:

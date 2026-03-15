@@ -129,6 +129,32 @@ export const SendAgentRequestResponse = zod.object({
 });
 
 /**
+ * Records that a user initiated contact with an agent via a specific channel
+ * @summary Log a hire request
+ */
+export const LogHireRequestParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const LogHireRequestBody = zod.object({
+  channel: zod.string(),
+});
+
+/**
+ * Returns hire request counts and channel breakdown for an agent
+ * @summary Get agent hiring stats
+ */
+export const GetAgentStatsParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetAgentStatsResponse = zod.object({
+  agentId: zod.number(),
+  hireCount: zod.number(),
+  channelBreakdown: zod.record(zod.string(), zod.number()),
+});
+
+/**
  * Search agents by tag or description keyword
  * @summary Search agents by keyword
  */

@@ -20,9 +20,12 @@ import type {
   Agent,
   AgentRequestBody,
   AgentRequestResponse,
+  AgentStats,
   CreateAgentBody,
   ErrorResponse,
   HealthStatus,
+  HireRequestBody,
+  HireRequestResponse,
   SearchAgentsParams,
   VerifyAgentResponse,
 } from "./api.schemas";
@@ -531,6 +534,182 @@ export const useSendAgentRequest = <
 > => {
   return useMutation(getSendAgentRequestMutationOptions(options));
 };
+
+/**
+ * Records that a user initiated contact with an agent via a specific channel
+ * @summary Log a hire request
+ */
+export const getLogHireRequestUrl = (id: number) => {
+  return `/api/agents/${id}/hire`;
+};
+
+export const logHireRequest = async (
+  id: number,
+  hireRequestBody: HireRequestBody,
+  options?: RequestInit,
+): Promise<HireRequestResponse> => {
+  return customFetch<HireRequestResponse>(getLogHireRequestUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(hireRequestBody),
+  });
+};
+
+export const getLogHireRequestMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof logHireRequest>>,
+    TError,
+    { id: number; data: BodyType<HireRequestBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof logHireRequest>>,
+  TError,
+  { id: number; data: BodyType<HireRequestBody> },
+  TContext
+> => {
+  const mutationKey = ["logHireRequest"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof logHireRequest>>,
+    { id: number; data: BodyType<HireRequestBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return logHireRequest(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type LogHireRequestMutationResult = NonNullable<
+  Awaited<ReturnType<typeof logHireRequest>>
+>;
+export type LogHireRequestMutationBody = BodyType<HireRequestBody>;
+export type LogHireRequestMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Log a hire request
+ */
+export const useLogHireRequest = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof logHireRequest>>,
+    TError,
+    { id: number; data: BodyType<HireRequestBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof logHireRequest>>,
+  TError,
+  { id: number; data: BodyType<HireRequestBody> },
+  TContext
+> => {
+  return useMutation(getLogHireRequestMutationOptions(options));
+};
+
+/**
+ * Returns hire request counts and channel breakdown for an agent
+ * @summary Get agent hiring stats
+ */
+export const getGetAgentStatsUrl = (id: number) => {
+  return `/api/agents/${id}/stats`;
+};
+
+export const getAgentStats = async (
+  id: number,
+  options?: RequestInit,
+): Promise<AgentStats> => {
+  return customFetch<AgentStats>(getGetAgentStatsUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetAgentStatsQueryKey = (id: number) => {
+  return [`/api/agents/${id}/stats`] as const;
+};
+
+export const getGetAgentStatsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getAgentStats>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getAgentStats>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetAgentStatsQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getAgentStats>>> = ({
+    signal,
+  }) => getAgentStats(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getAgentStats>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetAgentStatsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getAgentStats>>
+>;
+export type GetAgentStatsQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Get agent hiring stats
+ */
+
+export function useGetAgentStats<
+  TData = Awaited<ReturnType<typeof getAgentStats>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getAgentStats>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetAgentStatsQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * Search agents by tag or description keyword
