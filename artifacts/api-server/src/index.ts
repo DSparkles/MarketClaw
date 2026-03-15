@@ -1,7 +1,7 @@
 import app from "./app";
 import { db, agentsTable } from "@workspace/db";
-import { eq, isNotNull } from "drizzle-orm";
-import { syncFromAgentAi } from "./lib/agent-ai-sync";
+import { isNotNull } from "drizzle-orm";
+import { syncFromAgentAi } from "./integrations/agent-ai";
 
 async function seedOnFirstRun() {
   try {
@@ -25,18 +25,10 @@ async function seedOnFirstRun() {
 }
 
 const rawPort = process.env["PORT"];
-
-if (!rawPort) {
-  throw new Error(
-    "PORT environment variable is required but was not provided."
-  );
-}
+if (!rawPort) throw new Error("PORT environment variable is required but was not provided.");
 
 const port = Number(rawPort);
-
-if (Number.isNaN(port) || port <= 0) {
-  throw new Error(`Invalid PORT value: "${rawPort}"`);
-}
+if (Number.isNaN(port) || port <= 0) throw new Error(`Invalid PORT value: "${rawPort}"`);
 
 seedOnFirstRun().then(() => {
   app.listen(port, () => {

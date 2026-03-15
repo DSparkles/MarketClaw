@@ -1,7 +1,6 @@
 import { db, agentsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
-
-const AGENT_AI_API = "https://api-lr.agent.ai/v1/action";
+import { AGENT_AI_API_BASE } from "../config";
 
 interface AgentAiMetadata {
   id: string;
@@ -37,30 +36,28 @@ interface SearchResponse {
 }
 
 const ICON_TAGS: Record<string, string[]> = {
-  "sales-pipeline": ["sales", "CRM", "prospecting"],
-  "action": ["automation", "workflow", "productivity"],
-  "wisdom": ["research", "analysis", "intelligence"],
-  "earnings": ["branding", "startups", "naming"],
-  "youtube2": ["video", "content", "scriptwriting"],
-  "web-address": ["domains", "branding", "valuation"],
-  "meme": ["social-media", "content", "humor"],
-  "copywriting": ["copywriting", "writing", "content"],
-  "linkedin2": ["LinkedIn", "social-media", "research"],
-  "brand": ["branding", "marketing", "strategy"],
-  "email": ["email", "outreach", "marketing"],
-  "summarize": ["summarization", "productivity", "research"],
-  "seo": ["SEO", "content", "marketing"],
-  "data": ["data", "analytics", "insights"],
-  "code": ["coding", "development", "engineering"],
-  "image": ["image", "creative", "design"],
+  "sales-pipeline":   ["sales", "CRM", "prospecting"],
+  "action":           ["automation", "workflow", "productivity"],
+  "wisdom":           ["research", "analysis", "intelligence"],
+  "earnings":         ["branding", "startups", "naming"],
+  "youtube2":         ["video", "content", "scriptwriting"],
+  "web-address":      ["domains", "branding", "valuation"],
+  "meme":             ["social-media", "content", "humor"],
+  "copywriting":      ["copywriting", "writing", "content"],
+  "linkedin2":        ["LinkedIn", "social-media", "research"],
+  "brand":            ["branding", "marketing", "strategy"],
+  "email":            ["email", "outreach", "marketing"],
+  "summarize":        ["summarization", "productivity", "research"],
+  "seo":              ["SEO", "content", "marketing"],
+  "data":             ["data", "analytics", "insights"],
+  "code":             ["coding", "development", "engineering"],
+  "image":            ["image", "creative", "design"],
   "customer-service": ["customer-service", "support", "CRM"],
 };
 
 function iconToTags(iconPath: string | null | undefined): string[] {
   if (!iconPath) return ["AI", "agent"];
-  const match = Object.entries(ICON_TAGS).find(([key]) =>
-    iconPath.includes(key)
-  );
+  const match = Object.entries(ICON_TAGS).find(([key]) => iconPath.includes(key));
   return match ? match[1] : ["AI", "agent"];
 }
 
@@ -81,11 +78,19 @@ function makeDescription(meta: AgentAiMetadata): string {
   return suffix ? `${meta.description}\n\n${suffix}.` : meta.description;
 }
 
-export async function syncFromAgentAi(opts: {
+export interface SyncOptions {
   pages?: number;
   pageSize?: number;
   query?: string;
-} = {}): Promise<{ inserted: number; skipped: number; errors: number }> {
+}
+
+export interface SyncResult {
+  inserted: number;
+  skipped: number;
+  errors: number;
+}
+
+export async function syncFromAgentAi(opts: SyncOptions = {}): Promise<SyncResult> {
   const token = process.env["AGENT_AI_API_KEY"];
   if (!token) throw new Error("AGENT_AI_API_KEY is not set");
 
@@ -97,7 +102,7 @@ export async function syncFromAgentAi(opts: {
   for (let page = 0; page < pages; page++) {
     let entries: AgentAiEntry[];
     try {
-      const res = await fetch(`${AGENT_AI_API}/search`, {
+      const res = await fetch(`${AGENT_AI_API_BASE}/search`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -131,10 +136,7 @@ export async function syncFromAgentAi(opts: {
           .from(agentsTable)
           .where(eq(agentsTable.externalId, externalId));
 
-        if (existing.length > 0) {
-          skipped++;
-          continue;
-        }
+        if (existing.length > 0) { skipped++; continue; }
 
         const tags = [
           ...iconToTags(meta.icon),
