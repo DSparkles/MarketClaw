@@ -312,7 +312,7 @@ export function AgentDetail() {
               <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 flex items-center gap-2">
                 <Calendar className="w-3.5 h-3.5" /> Listed
               </p>
-              <p className="text-sm">{format(new Date(agent.createdAt), "MMM d, yyyy")}</p>
+              <p className="text-sm">{agent.createdAt ? format(new Date(agent.createdAt), "MMM d, yyyy") : "—"}</p>
             </div>
             {isVerified && agent.verifiedAt && (
               <div>
