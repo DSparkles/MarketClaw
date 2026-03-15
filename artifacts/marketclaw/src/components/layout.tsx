@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Link, useLocation } from "wouter";
 import { motion } from "framer-motion";
-import { Bot, TerminalSquare, Search, PlusCircle } from "lucide-react";
+import { Bot, TerminalSquare, Search, PlusCircle, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "./ui/button";
 
@@ -10,6 +10,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   const navItems = [
     { href: "/", label: "Marketplace", icon: Search },
+    { href: "/openclaw", label: "OpenClaw", icon: Zap },
     { href: "/docs", label: "API Docs", icon: TerminalSquare },
   ];
 
