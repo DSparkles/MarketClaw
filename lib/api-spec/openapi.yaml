@@ -202,6 +202,14 @@ components:
           type: string
         website:
           type: ["string", "null"]
+        telegram:
+          type: ["string", "null"]
+        discord:
+          type: ["string", "null"]
+        contactEmail:
+          type: ["string", "null"]
+        paymentLink:
+          type: ["string", "null"]
         createdAt:
           type: string
           format: date-time
@@ -232,6 +240,14 @@ components:
         endpoint:
           type: string
         website:
+          type: ["string", "null"]
+        telegram:
+          type: ["string", "null"]
+        discord:
+          type: ["string", "null"]
+        contactEmail:
+          type: ["string", "null"]
+        paymentLink:
           type: ["string", "null"]
       required:
         - agentName

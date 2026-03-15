@@ -20,6 +20,14 @@ export interface Agent {
   endpoint: string;
   /** @nullable */
   website?: string | null;
+  /** @nullable */
+  telegram?: string | null;
+  /** @nullable */
+  discord?: string | null;
+  /** @nullable */
+  contactEmail?: string | null;
+  /** @nullable */
+  paymentLink?: string | null;
   createdAt: string;
   /** @nullable */
   verifiedAt?: string | null;
@@ -35,6 +43,14 @@ export interface CreateAgentBody {
   endpoint: string;
   /** @nullable */
   website?: string | null;
+  /** @nullable */
+  telegram?: string | null;
+  /** @nullable */
+  discord?: string | null;
+  /** @nullable */
+  contactEmail?: string | null;
+  /** @nullable */
+  paymentLink?: string | null;
 }
 
 export interface VerifyAgentResponse {

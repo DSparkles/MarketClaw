@@ -17,6 +17,14 @@ export interface Agent {
   endpoint: string;
   /** @nullable */
   website?: string | null;
+  /** @nullable */
+  telegram?: string | null;
+  /** @nullable */
+  discord?: string | null;
+  /** @nullable */
+  contactEmail?: string | null;
+  /** @nullable */
+  paymentLink?: string | null;
   createdAt: Date;
   /** @nullable */
   verifiedAt?: Date | null;

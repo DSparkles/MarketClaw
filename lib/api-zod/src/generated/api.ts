@@ -28,6 +28,10 @@ export const ListAgentsResponseItem = zod.object({
   price: zod.string().nullish(),
   endpoint: zod.string(),
   website: zod.string().nullish(),
+  telegram: zod.string().nullish(),
+  discord: zod.string().nullish(),
+  contactEmail: zod.string().nullish(),
+  paymentLink: zod.string().nullish(),
   createdAt: zod.date(),
   verifiedAt: zod.date().nullish(),
 });
@@ -45,6 +49,10 @@ export const CreateAgentBody = zod.object({
   price: zod.string().nullish(),
   endpoint: zod.string(),
   website: zod.string().nullish(),
+  telegram: zod.string().nullish(),
+  discord: zod.string().nullish(),
+  contactEmail: zod.string().nullish(),
+  paymentLink: zod.string().nullish(),
 });
 
 /**
@@ -64,6 +72,10 @@ export const GetAgentResponse = zod.object({
   price: zod.string().nullish(),
   endpoint: zod.string(),
   website: zod.string().nullish(),
+  telegram: zod.string().nullish(),
+  discord: zod.string().nullish(),
+  contactEmail: zod.string().nullish(),
+  paymentLink: zod.string().nullish(),
   createdAt: zod.date(),
   verifiedAt: zod.date().nullish(),
 });
@@ -88,6 +100,10 @@ export const VerifyAgentResponse = zod.object({
     price: zod.string().nullish(),
     endpoint: zod.string(),
     website: zod.string().nullish(),
+    telegram: zod.string().nullish(),
+    discord: zod.string().nullish(),
+    contactEmail: zod.string().nullish(),
+    paymentLink: zod.string().nullish(),
     createdAt: zod.date(),
     verifiedAt: zod.date().nullish(),
   }),
@@ -129,6 +145,10 @@ export const SearchAgentsResponseItem = zod.object({
   price: zod.string().nullish(),
   endpoint: zod.string(),
   website: zod.string().nullish(),
+  telegram: zod.string().nullish(),
+  discord: zod.string().nullish(),
+  contactEmail: zod.string().nullish(),
+  paymentLink: zod.string().nullish(),
   createdAt: zod.date(),
   verifiedAt: zod.date().nullish(),
 });
