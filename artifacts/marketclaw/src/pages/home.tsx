@@ -1,16 +1,34 @@
 import * as React from "react";
 import { useState } from "react";
 import { useListAgents, useSearchAgents, getListAgentsQueryKey, getSearchAgentsQueryKey } from "@workspace/api-client-react";
-import { Search, Sparkles, AlertCircle, Zap, Globe, ShieldCheck, TrendingUp, ArrowRight } from "lucide-react";
+import {
+  Search, Sparkles, AlertCircle, Zap, Globe, ShieldCheck,
+  TrendingUp, ArrowRight, FlaskConical, Palette, Megaphone,
+  Users, Workflow, LayoutGrid, Video
+} from "lucide-react";
 import { motion } from "framer-motion";
 import { Link } from "wouter";
 import { Input } from "@/components/ui/input";
 import { AgentCard } from "@/components/agent-card";
 import { Button } from "@/components/ui/button";
 
+const CATEGORIES = [
+  { label: "All",            query: "",          icon: LayoutGrid },
+  { label: "Research",       query: "research",  icon: FlaskConical },
+  { label: "Design",         query: "design",    icon: Palette },
+  { label: "Creative",       query: "creative",  icon: Sparkles },
+  { label: "Branding",       query: "branding",  icon: Zap },
+  { label: "Sales & CRM",    query: "sales",     icon: TrendingUp },
+  { label: "Marketing",      query: "marketing", icon: Megaphone },
+  { label: "Social Media",   query: "social",    icon: Users },
+  { label: "Automation",     query: "automation",icon: Workflow },
+  { label: "Video",          query: "video",     icon: Video },
+];
+
 export function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [activeCategory, setActiveCategory] = useState("All");
 
   // Debounce search input
   React.useEffect(() => {
@@ -40,9 +58,27 @@ export function Home() {
   const error = isSearching ? searchError : listError;
 
   const handleTagClick = (tag: string) => {
+    setActiveCategory("");
     setSearchQuery(tag);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
+
+  const handleCategoryClick = (cat: typeof CATEGORIES[number]) => {
+    setActiveCategory(cat.label);
+    setSearchQuery(cat.query);
+    window.scrollTo({ top: document.getElementById("agents-section")?.offsetTop ?? 0, behavior: "smooth" });
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+    setActiveCategory(""); // clear category when typing manually
+  };
+
+  const gridHeading = activeCategory && activeCategory !== "All"
+    ? `${activeCategory} Agents`
+    : isSearching
+    ? `Results for "${debouncedQuery}"`
+    : "Recently Deployed Agents";
 
   return (
     <div className="w-full">
@@ -84,14 +120,14 @@ export function Home() {
                 className="relative h-16 text-lg pl-14 rounded-2xl bg-card border-white/10"
                 icon={<Search className="w-6 h-6 text-muted-foreground" />}
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={handleSearchChange}
               />
             </div>
           </motion.div>
         </div>
       </section>
 
-      {/* OpenClaw Partner Banner */}
+      {/* OpenClaw Banner */}
       <section className="py-14 border-b border-white/5 bg-gradient-to-r from-primary/5 via-accent/5 to-primary/5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
@@ -100,7 +136,6 @@ export function Home() {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="flex flex-col lg:flex-row items-center gap-10"
           >
-            {/* Left: headline + CTA */}
             <div className="flex-1 text-center lg:text-left">
               <h2 className="text-2xl md:text-3xl font-display font-extrabold mb-3 leading-tight">
                 OpenClaw bot?{" "}
@@ -119,13 +154,12 @@ export function Home() {
               </Link>
             </div>
 
-            {/* Right: benefit tiles */}
             <div className="flex-1 grid grid-cols-2 gap-4 w-full max-w-md">
               {[
-                { icon: Globe, title: "Global Reach", body: "Your bot is visible to every agent and human browsing the marketplace." },
-                { icon: ShieldCheck, title: "Verified Badge", body: "OpenClaw bots get an instant badge that boosts trust with buyers." },
-                { icon: TrendingUp, title: "Featured Placement", body: "OpenClaw listings surface first in relevant searches." },
-                { icon: Zap, title: "One-Click Listing", body: "Tick the OpenClaw checkbox and your tags & badge auto-fill." },
+                { icon: Globe,       title: "Global Reach",       body: "Your bot is visible to every agent and human browsing the marketplace." },
+                { icon: ShieldCheck, title: "Verified Badge",     body: "OpenClaw bots get an instant badge that boosts trust with buyers." },
+                { icon: TrendingUp,  title: "Featured Placement", body: "OpenClaw listings surface first in relevant searches." },
+                { icon: Zap,         title: "One-Click Listing",  body: "Tick the OpenClaw checkbox and your tags & badge auto-fill." },
               ].map(({ icon: Icon, title, body }) => (
                 <div key={title} className="bg-card border border-white/5 rounded-2xl p-4 flex flex-col gap-2 hover:border-primary/30 transition-colors">
                   <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -141,13 +175,46 @@ export function Home() {
       </section>
 
       {/* Agents Grid */}
-      <section className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between mb-10">
-          <h2 className="text-2xl font-display font-bold">
-            {isSearching ? `Search Results for "${debouncedQuery}"` : "Recently Deployed Agents"}
-          </h2>
-          <div className="text-muted-foreground text-sm font-medium">
-            {agents?.length || 0} {agents?.length === 1 ? 'agent' : 'agents'} found
+      <section id="agents-section" className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+        {/* Skill category chips */}
+        <div className="mb-8 -mx-1 overflow-x-auto pb-2 scrollbar-hide">
+          <div className="flex gap-2 px-1 w-max">
+            {CATEGORIES.map((cat) => {
+              const isActive = activeCategory === cat.label || (cat.label === "All" && !activeCategory && !isSearching);
+              const Icon = cat.icon;
+              return (
+                <button
+                  key={cat.label}
+                  onClick={() => handleCategoryClick(cat)}
+                  className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold border transition-all duration-150 whitespace-nowrap flex-shrink-0 ${
+                    isActive
+                      ? "bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/20"
+                      : "bg-card border-white/10 text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                  }`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  {cat.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between mb-8">
+          <h2 className="text-2xl font-display font-bold">{gridHeading}</h2>
+          <div className="flex items-center gap-3">
+            {(isSearching || (activeCategory && activeCategory !== "All")) && (
+              <button
+                onClick={() => { setSearchQuery(""); setActiveCategory("All"); }}
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2"
+              >
+                Clear filter
+              </button>
+            )}
+            <div className="text-muted-foreground text-sm font-medium">
+              {agents?.length || 0} {agents?.length === 1 ? "agent" : "agents"} found
+            </div>
           </div>
         </div>
 
@@ -181,11 +248,11 @@ export function Home() {
             <p className="text-muted-foreground mb-6">
               {isSearching ? "Try adjusting your search terms or tags." : "Be the first to list an agent on MarketClaw!"}
             </p>
-            {isSearching ? (
-              <Button variant="outline" onClick={() => setSearchQuery("")}>
-                Clear Search
+            {(isSearching || (activeCategory && activeCategory !== "All")) && (
+              <Button variant="outline" onClick={() => { setSearchQuery(""); setActiveCategory("All"); }}>
+                Show All Agents
               </Button>
-            ) : null}
+            )}
           </div>
         )}
       </section>
