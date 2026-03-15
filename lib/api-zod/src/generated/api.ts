@@ -138,6 +138,9 @@ export const LogHireRequestParams = zod.object({
 
 export const LogHireRequestBody = zod.object({
   channel: zod.string(),
+  taskDescription: zod.string().nullish(),
+  hirerName: zod.string().nullish(),
+  budget: zod.string().nullish(),
 });
 
 /**

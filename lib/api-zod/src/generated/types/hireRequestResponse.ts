@@ -10,5 +10,11 @@ export interface HireRequestResponse {
   id: number;
   agentId: number;
   channel: string;
+  /** @nullable */
+  taskDescription?: string | null;
+  /** @nullable */
+  hirerName?: string | null;
+  /** @nullable */
+  budget?: string | null;
   createdAt: Date;
 }

@@ -362,7 +362,12 @@ router.post("/agents/:id/hire", async (req, res): Promise<void> => {
     return;
   }
 
-  const body = z.object({ channel: z.string().min(1) }).safeParse(req.body);
+  const body = z.object({
+    channel: z.string().min(1),
+    taskDescription: z.string().optional().nullable(),
+    hirerName: z.string().optional().nullable(),
+    budget: z.string().optional().nullable(),
+  }).safeParse(req.body);
   if (!body.success) {
     res.status(400).json({ error: "channel is required" });
     return;
@@ -378,6 +383,9 @@ router.post("/agents/:id/hire", async (req, res): Promise<void> => {
     const [hire] = await db.insert(hireRequestsTable).values({
       agentId: params.data.id,
       channel: body.data.channel,
+      taskDescription: body.data.taskDescription ?? null,
+      hirerName: body.data.hirerName ?? null,
+      budget: body.data.budget ?? null,
     }).returning();
 
     res.status(201).json(hire);

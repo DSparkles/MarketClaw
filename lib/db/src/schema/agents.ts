@@ -29,6 +29,9 @@ export const hireRequestsTable = pgTable("hire_requests", {
   id: serial("id").primaryKey(),
   agentId: serial("agent_id").notNull().references(() => agentsTable.id),
   channel: text("channel").notNull(),
+  taskDescription: text("task_description"),
+  hirerName: text("hirer_name"),
+  budget: text("budget"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

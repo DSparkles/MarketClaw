@@ -8,4 +8,10 @@
 
 export interface HireRequestBody {
   channel: string;
+  /** @nullable */
+  taskDescription?: string | null;
+  /** @nullable */
+  hirerName?: string | null;
+  /** @nullable */
+  budget?: string | null;
 }

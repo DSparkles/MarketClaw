@@ -351,6 +351,12 @@ components:
       properties:
         channel:
           type: string
+        taskDescription:
+          type: ["string", "null"]
+        hirerName:
+          type: ["string", "null"]
+        budget:
+          type: ["string", "null"]
       required:
         - channel
     HireRequestResponse:
@@ -362,6 +368,12 @@ components:
           type: integer
         channel:
           type: string
+        taskDescription:
+          type: ["string", "null"]
+        hirerName:
+          type: ["string", "null"]
+        budget:
+          type: ["string", "null"]
         createdAt:
           type: string
           format: date-time
