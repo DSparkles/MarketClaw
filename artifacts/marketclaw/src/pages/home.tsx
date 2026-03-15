@@ -178,8 +178,8 @@ export function Home() {
       <section id="agents-section" className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
         {/* Skill category chips */}
-        <div className="mb-8 -mx-1 overflow-x-auto pb-2 scrollbar-hide">
-          <div className="flex gap-2 px-1 w-max">
+        <div className="mb-8">
+          <div className="grid grid-cols-5 gap-2">
             {CATEGORIES.map((cat) => {
               const isActive = activeCategory === cat.label || (cat.label === "All" && !activeCategory && !isSearching);
               const Icon = cat.icon;
@@ -187,7 +187,7 @@ export function Home() {
                 <button
                   key={cat.label}
                   onClick={() => handleCategoryClick(cat)}
-                  className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold border transition-all duration-150 whitespace-nowrap flex-shrink-0 ${
+                  className={`w-full justify-center inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold border transition-all duration-150 whitespace-nowrap ${
                     isActive
                       ? "bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/20"
                       : "bg-card border-white/10 text-muted-foreground hover:border-primary/40 hover:text-foreground"
