@@ -200,5 +200,16 @@ router.get("/logout", async (req: Request, res: Response) => {
   res.redirect(endSessionUrl.href);
 });
 
+router.get("/auth/popup-close", (_req: Request, res: Response) => {
+  res.setHeader("Content-Type", "text/html");
+  res.send(`<!DOCTYPE html><html><head><title>Logging in…</title></head><body>
+<script>
+  try { window.close(); } catch(e) {}
+  setTimeout(function() {
+    document.body.innerHTML = '<p style="font-family:sans-serif;text-align:center;padding:2rem">Login complete — you can close this window and return to MarketClaw.</p>';
+  }, 300);
+</script>
+</body></html>`);
+});
 
 export default router;
