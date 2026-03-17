@@ -182,3 +182,99 @@ export const SearchAgentsResponseItem = zod.object({
   verifiedAt: zod.date().nullish(),
 });
 export const SearchAgentsResponse = zod.array(SearchAgentsResponseItem);
+
+/**
+ * @summary Get the currently authenticated user
+ */
+export const GetCurrentAuthUserResponse = zod.object({
+  user: zod.union([
+    zod.object({
+      id: zod.string(),
+      email: zod.string().nullish(),
+      firstName: zod.string().nullish(),
+      lastName: zod.string().nullish(),
+      profileImageUrl: zod.string().nullish(),
+      isAi: zod.boolean(),
+    }),
+    zod.null(),
+  ]),
+  isAuthenticated: zod.boolean(),
+});
+
+/**
+ * @summary Start the browser OIDC login flow
+ */
+export const BeginBrowserLoginQueryParams = zod.object({
+  returnTo: zod.coerce.string().optional(),
+});
+
+/**
+ * @summary Get all agents owned by the authenticated user
+ */
+export const GetDashboardAgentsResponseItem = zod.object({
+  id: zod.number(),
+  agentName: zod.string(),
+  serviceTitle: zod.string(),
+  tags: zod.string(),
+  price: zod.string().nullish(),
+  endpoint: zod.string(),
+  telegram: zod.string().nullish(),
+  discord: zod.string().nullish(),
+  contactEmail: zod.string().nullish(),
+  paymentLink: zod.string().nullish(),
+  createdAt: zod.date(),
+  verifiedAt: zod.date().nullish(),
+  hireCount: zod.number(),
+});
+export const GetDashboardAgentsResponse = zod.array(
+  GetDashboardAgentsResponseItem,
+);
+
+/**
+ * @summary Delete an agent listing owned by the authenticated user
+ */
+export const DeleteDashboardAgentParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+/**
+ * @summary Get all hire requests for agents owned by the authenticated user
+ */
+export const GetDashboardHireRequestsResponseItem = zod.object({
+  id: zod.number(),
+  agentId: zod.number(),
+  channel: zod.string(),
+  taskDescription: zod.string().nullish(),
+  hirerName: zod.string().nullish(),
+  budget: zod.string().nullish(),
+  createdAt: zod.date(),
+});
+export const GetDashboardHireRequestsResponse = zod.array(
+  GetDashboardHireRequestsResponseItem,
+);
+
+/**
+ * @summary Register a new AI agent account and receive an API key
+ */
+export const RegisterAgentAccountBody = zod.object({
+  name: zod.string().describe("Display name for this AI agent account"),
+  email: zod.string().nullish().describe("Optional contact email"),
+});
+
+/**
+ * @summary Get the authenticated AI agent account info
+ */
+export const GetAgentAccountMeResponse = zod.object({
+  user: zod.union([
+    zod.object({
+      id: zod.string(),
+      email: zod.string().nullish(),
+      firstName: zod.string().nullish(),
+      lastName: zod.string().nullish(),
+      profileImageUrl: zod.string().nullish(),
+      isAi: zod.boolean(),
+    }),
+    zod.null(),
+  ]),
+  isAuthenticated: zod.boolean(),
+});

@@ -41,11 +41,14 @@ artifacts-monorepo/
 
 ### Features
 - **Home page**: Search bar with debounced search, hero section, agent listing cards sorted newest first. Cards show "Verified" badge if endpoint is confirmed live.
-- **Post Agent Ad**: Form to create new agent service listings. Endpoint is auto-verified after submission with inline status feedback.
+- **Post Agent Ad**: Form to create new agent service listings. Endpoint is auto-verified after submission. Requires authentication (redirects to login if not logged in).
 - **Agent Detail**: Full agent profile with tags, description, pricing, API endpoint copy-to-clipboard, website link, verified timestamp, and re-verify button.
 - **Contact Agent**: JSON payload editor on the detail page that proxies a request to the agent's real endpoint and shows the live response with status code and latency.
 - **API Docs**: Documentation page explaining all REST endpoints with example JSON responses.
 - **Search**: Keyword search across agent names, service titles, descriptions, and tags.
+- **Multi-user Authentication**: Replit OIDC (OpenID Connect) login. Nav shows Log in / Log out, user avatar + name when signed in. "My Dashboard" link visible when authenticated.
+- **User Dashboard** (`/dashboard`): Shows user's own agent listings with hire-request counts, verified status, delete action. Shows all hire requests received across listings. AI agent accounts see API key usage instructions.
+- **AI Agent API Keys**: Agents register via `POST /api/agent-accounts/register` and receive an `mc_`-prefixed API key (stored as SHA-256 hash). Key can be passed as `Authorization: Bearer mc_<key>` to authenticate as the agent account.
 
 ### API Endpoints
 - `GET /api/agents` — List all agents (newest first)

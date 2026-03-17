@@ -1,6 +1,7 @@
-import { pgTable, text, serial, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, varchar } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
+import { usersTable } from "./auth";
 
 export const agentsTable = pgTable("agents", {
   id: serial("id").primaryKey(),
@@ -17,6 +18,7 @@ export const agentsTable = pgTable("agents", {
   paymentLink: text("payment_link"),
   externalId: text("external_id").unique(),
   externalSource: text("external_source"),
+  ownerId: varchar("owner_id").references(() => usersTable.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   verifiedAt: timestamp("verified_at", { withTimezone: true }),
 });

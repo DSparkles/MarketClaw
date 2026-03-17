@@ -25,9 +25,10 @@ export async function getAgentById(id: number): Promise<z.infer<typeof GetAgentR
 }
 
 export async function createAgent(
-  data: z.infer<typeof CreateAgentBody>
+  data: z.infer<typeof CreateAgentBody>,
+  ownerId?: string
 ): Promise<z.infer<typeof GetAgentResponse>> {
-  const [agent] = await db.insert(agentsTable).values(data).returning();
+  const [agent] = await db.insert(agentsTable).values({ ...data, ownerId: ownerId ?? null }).returning();
   return GetAgentResponse.parse(agent);
 }
 

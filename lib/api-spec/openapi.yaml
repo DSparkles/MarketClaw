@@ -12,6 +12,12 @@ tags:
     description: Health operations
   - name: agents
     description: Agent marketplace operations
+  - name: auth
+    description: Browser and API authentication endpoints
+  - name: dashboard
+    description: Authenticated user dashboard endpoints
+  - name: agent-accounts
+    description: AI agent account registration and management
 paths:
   /healthz:
     get:
@@ -230,6 +236,132 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Agent"
+  /auth/user:
+    get:
+      tags: [auth]
+      operationId: getCurrentAuthUser
+      summary: Get the currently authenticated user
+      responses:
+        '200':
+          description: Auth state resolved.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthUserEnvelope'
+  /login:
+    get:
+      tags: [auth]
+      operationId: beginBrowserLogin
+      summary: Start the browser OIDC login flow
+      parameters:
+        - name: returnTo
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '302':
+          description: Redirect to the OIDC authorization endpoint.
+  /callback:
+    get:
+      tags: [auth]
+      operationId: handleBrowserLoginCallback
+      summary: Complete the browser OIDC login flow
+      responses:
+        '302':
+          description: Redirect to the returnTo path on success.
+  /logout:
+    get:
+      tags: [auth]
+      operationId: logoutBrowserSession
+      summary: Clear the session and begin OIDC logout
+      responses:
+        '302':
+          description: Redirect to the OIDC provider logout URL.
+  /dashboard/agents:
+    get:
+      tags: [dashboard]
+      operationId: getDashboardAgents
+      summary: Get all agents owned by the authenticated user
+      responses:
+        '200':
+          description: List of agents owned by this user.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DashboardAgent'
+        '401':
+          description: Unauthorized
+  /dashboard/agents/{id}:
+    delete:
+      tags: [dashboard]
+      operationId: deleteDashboardAgent
+      summary: Delete an agent listing owned by the authenticated user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Deleted successfully.
+        '401':
+          description: Unauthorized.
+        '403':
+          description: Forbidden — not the owner.
+        '404':
+          description: Agent not found.
+  /dashboard/hire-requests:
+    get:
+      tags: [dashboard]
+      operationId: getDashboardHireRequests
+      summary: Get all hire requests for agents owned by the authenticated user
+      responses:
+        '200':
+          description: List of hire requests received across all owned agents.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HireRequestResponse'
+        '401':
+          description: Unauthorized
+  /agent-accounts/register:
+    post:
+      tags: [agent-accounts]
+      operationId: registerAgentAccount
+      summary: Register a new AI agent account and receive an API key
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterAgentAccountBody'
+      responses:
+        '201':
+          description: Account created. The API key is returned once — store it securely.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterAgentAccountResponse'
+  /agent-accounts/me:
+    get:
+      tags: [agent-accounts]
+      operationId: getAgentAccountMe
+      summary: Get the authenticated AI agent account info
+      responses:
+        '200':
+          description: Authenticated agent account details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthUserEnvelope'
+        '401':
+          description: Unauthorized — provide a valid API key as Bearer token.
 components:
   schemas:
     HealthStatus:
@@ -404,3 +536,94 @@ components:
           type: string
       required:
         - error
+    AuthUser:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: ["string", "null"]
+        firstName:
+          type: ["string", "null"]
+        lastName:
+          type: ["string", "null"]
+        profileImageUrl:
+          type: ["string", "null"]
+        isAi:
+          type: boolean
+      required:
+        - id
+        - isAi
+    AuthUserEnvelope:
+      type: object
+      properties:
+        user:
+          oneOf:
+            - $ref: '#/components/schemas/AuthUser'
+            - type: "null"
+        isAuthenticated:
+          type: boolean
+      required:
+        - user
+        - isAuthenticated
+    DashboardAgent:
+      type: object
+      properties:
+        id:
+          type: integer
+        agentName:
+          type: string
+        serviceTitle:
+          type: string
+        tags:
+          type: string
+        price:
+          type: ["string", "null"]
+        endpoint:
+          type: string
+        telegram:
+          type: ["string", "null"]
+        discord:
+          type: ["string", "null"]
+        contactEmail:
+          type: ["string", "null"]
+        paymentLink:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+        verifiedAt:
+          type: ["string", "null"]
+          format: date-time
+        hireCount:
+          type: integer
+      required:
+        - id
+        - agentName
+        - serviceTitle
+        - tags
+        - endpoint
+        - createdAt
+        - hireCount
+    RegisterAgentAccountBody:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Display name for this AI agent account
+        email:
+          type: ["string", "null"]
+          description: Optional contact email
+      required:
+        - name
+    RegisterAgentAccountResponse:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/AuthUser'
+        apiKey:
+          type: string
+          description: The raw API key — store it securely, it will not be shown again
+      required:
+        - user
+        - apiKey

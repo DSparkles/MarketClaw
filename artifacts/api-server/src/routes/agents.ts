@@ -54,7 +54,8 @@ router.post("/agents", async (req, res): Promise<void> => {
   }
 
   try {
-    res.status(201).json(await agentService.createAgent(parsed.data));
+    const ownerId = req.isAuthenticated() ? req.user.id : undefined;
+    res.status(201).json(await agentService.createAgent(parsed.data, ownerId));
   } catch (err) {
     console.error("Failed to create agent:", err);
     res.status(500).json({ error: "Internal server error" });

@@ -1,12 +1,14 @@
 import * as React from "react";
 import { Link, useLocation } from "wouter";
 import { motion } from "framer-motion";
-import { Bot, TerminalSquare, Search, PlusCircle, Zap } from "lucide-react";
+import { Bot, TerminalSquare, Search, PlusCircle, Zap, LayoutDashboard, LogIn, LogOut, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "./ui/button";
+import { useAuth } from "@/hooks/use-auth";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
+  const { user, isLoading, isAuthenticated, login, logout } = useAuth();
 
   const navItems = [
     { href: "/", label: "Marketplace", icon: Search },
@@ -35,7 +37,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             </Link>
 
             {/* Desktop Nav */}
-            <nav className="hidden md:flex items-center gap-8">
+            <nav className="hidden md:flex items-center gap-6">
               {navItems.map((item) => {
                 const isActive = location === item.href;
                 const Icon = item.icon;
@@ -53,25 +55,90 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   </Link>
                 );
               })}
-              
-              <div className="h-6 w-px bg-border mx-2" />
-              
+
+              <div className="h-6 w-px bg-border" />
+
+              {!isLoading && isAuthenticated && (
+                <Link
+                  href="/dashboard"
+                  className={cn(
+                    "flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary",
+                    location === "/dashboard" ? "text-primary" : "text-muted-foreground"
+                  )}
+                >
+                  <LayoutDashboard className="w-4 h-4" />
+                  My Dashboard
+                </Link>
+              )}
+
               <Link href="/post">
                 <Button className="gap-2 rounded-full">
                   <PlusCircle className="w-4 h-4" />
                   Post Agent Ad
                 </Button>
               </Link>
+
+              {!isLoading && (
+                isAuthenticated ? (
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      {user?.profileImageUrl ? (
+                        <img
+                          src={user.profileImageUrl}
+                          alt={user.firstName ?? "User"}
+                          className="w-7 h-7 rounded-full border border-white/10"
+                        />
+                      ) : (
+                        <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center">
+                          <User className="w-3.5 h-3.5 text-primary" />
+                        </div>
+                      )}
+                      <span className="hidden lg:block">{user?.firstName ?? "Account"}</span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="gap-2 text-muted-foreground hover:text-foreground rounded-full"
+                      onClick={logout}
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Log out
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-2 rounded-full border-white/10"
+                    onClick={login}
+                  >
+                    <LogIn className="w-4 h-4" />
+                    Log in
+                  </Button>
+                )
+              )}
             </nav>
 
             {/* Mobile Nav (simplified) */}
-            <div className="md:hidden flex items-center gap-4">
+            <div className="md:hidden flex items-center gap-2">
+              {!isLoading && isAuthenticated && (
+                <Link href="/dashboard">
+                  <Button size="sm" variant="ghost" className="gap-1 rounded-full">
+                    <LayoutDashboard className="w-4 h-4" />
+                  </Button>
+                </Link>
+              )}
               <Link href="/post">
                 <Button size="sm" className="gap-2 rounded-full">
                   <PlusCircle className="w-4 h-4" />
                   Post
                 </Button>
               </Link>
+              {!isLoading && !isAuthenticated && (
+                <Button size="sm" variant="ghost" className="rounded-full" onClick={login}>
+                  <LogIn className="w-4 h-4" />
+                </Button>
+              )}
             </div>
           </div>
         </div>

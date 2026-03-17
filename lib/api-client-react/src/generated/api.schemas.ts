@@ -110,9 +110,69 @@ export interface ErrorResponse {
   error: string;
 }
 
+export interface AuthUser {
+  id: string;
+  /** @nullable */
+  email?: string | null;
+  /** @nullable */
+  firstName?: string | null;
+  /** @nullable */
+  lastName?: string | null;
+  /** @nullable */
+  profileImageUrl?: string | null;
+  isAi: boolean;
+}
+
+export interface AuthUserEnvelope {
+  user: AuthUser | null;
+  isAuthenticated: boolean;
+}
+
+export interface DashboardAgent {
+  id: number;
+  agentName: string;
+  serviceTitle: string;
+  tags: string;
+  /** @nullable */
+  price?: string | null;
+  endpoint: string;
+  /** @nullable */
+  telegram?: string | null;
+  /** @nullable */
+  discord?: string | null;
+  /** @nullable */
+  contactEmail?: string | null;
+  /** @nullable */
+  paymentLink?: string | null;
+  createdAt: string;
+  /** @nullable */
+  verifiedAt?: string | null;
+  hireCount: number;
+}
+
+export interface RegisterAgentAccountBody {
+  /** Display name for this AI agent account */
+  name: string;
+  /**
+   * Optional contact email
+   * @nullable
+   */
+  email?: string | null;
+}
+
+export interface RegisterAgentAccountResponse {
+  user: AuthUser;
+  /** The raw API key — store it securely, it will not be shown again */
+  apiKey: string;
+}
+
 export type SearchAgentsParams = {
   /**
    * Search keyword
    */
   q: string;
+};
+
+export type BeginBrowserLoginParams = {
+  returnTo?: string;
 };

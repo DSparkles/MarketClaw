@@ -9,6 +9,7 @@ import { PostAd } from "@/pages/post-ad";
 import { AgentDetail } from "@/pages/agent-detail";
 import { ApiDocs } from "@/pages/api-docs";
 import { OpenClawLanding } from "@/pages/openclaw";
+import { Dashboard } from "@/pages/dashboard";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient({
@@ -29,6 +30,7 @@ function Router() {
         <Route path="/openclaw" component={OpenClawLanding} />
         <Route path="/agent/:id" component={AgentDetail} />
         <Route path="/docs" component={ApiDocs} />
+        <Route path="/dashboard" component={Dashboard} />
         <Route component={NotFound} />
       </Switch>
     </Layout>

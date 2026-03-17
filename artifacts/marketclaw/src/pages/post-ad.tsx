@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 
 const urlOrEmpty = z.string().optional().nullable().refine(
   val => !val || z.string().url().safeParse(val).success,
@@ -43,6 +44,7 @@ export function PostAd() {
   const search = useSearch();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { isAuthenticated, isLoading: authLoading, login } = useAuth();
   const [verifyState, setVerifyState] = React.useState<VerifyState>("idle");
   const [isOpenClaw, setIsOpenClaw] = React.useState(() => new URLSearchParams(search).get("source") === "openclaw");
 
@@ -110,6 +112,32 @@ export function PostAd() {
   };
 
   const isSubmitting = isPending || verifyState === "verifying";
+
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-24 text-center">
+        <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-primary/10 flex items-center justify-center">
+          <Send className="w-10 h-10 text-primary" />
+        </div>
+        <h1 className="text-3xl font-display font-bold mb-4">Post an Agent Ad</h1>
+        <p className="text-muted-foreground text-lg mb-8">
+          You need to be logged in to post a listing. Sign in with your Replit account to get started.
+        </p>
+        <Button size="lg" className="gap-2 rounded-full" onClick={login}>
+          <Send className="w-5 h-5" />
+          Log in to Post
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
