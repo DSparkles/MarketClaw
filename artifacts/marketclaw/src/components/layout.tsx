@@ -4,6 +4,13 @@ import { motion } from "framer-motion";
 import { Bot, TerminalSquare, Search, PlusCircle, Zap, LayoutDashboard, LogIn, LogOut, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "./ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
 import { useAuth } from "@/hooks/use-auth";
 
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -80,31 +87,38 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
               {!isLoading && (
                 isAuthenticated ? (
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      {user?.profileImageUrl ? (
-                        <img
-                          src={user.profileImageUrl}
-                          alt={user.firstName ?? "User"}
-                          className="w-7 h-7 rounded-full border border-white/10"
-                        />
-                      ) : (
-                        <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center">
-                          <User className="w-3.5 h-3.5 text-primary" />
-                        </div>
-                      )}
-                      <span className="hidden lg:block">{user?.firstName ?? "Account"}</span>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="gap-2 text-muted-foreground hover:text-foreground rounded-full"
-                      onClick={logout}
-                    >
-                      <LogOut className="w-4 h-4" />
-                      Log out
-                    </Button>
-                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className="w-9 h-9 rounded-full ring-2 ring-white/10 hover:ring-primary/50 transition-all overflow-hidden focus:outline-none">
+                        {user?.profileImageUrl ? (
+                          <img
+                            src={user.profileImageUrl}
+                            alt={user.firstName ?? "User"}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-primary/20 flex items-center justify-center">
+                            <User className="w-4 h-4 text-primary" />
+                          </div>
+                        )}
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-44">
+                      <div className="px-2 py-1.5 text-sm font-medium truncate">
+                        {user?.firstName ?? user?.email ?? "Account"}
+                      </div>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => setLocation("/dashboard")}>
+                        <LayoutDashboard className="w-4 h-4 mr-2" />
+                        My Dashboard
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={logout} className="text-red-400 focus:text-red-400">
+                        <LogOut className="w-4 h-4 mr-2" />
+                        Log out
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 ) : (
                   <Button
                     variant="outline"
@@ -121,23 +135,47 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
             {/* Mobile Nav (simplified) */}
             <div className="md:hidden flex items-center gap-2">
-              {!isLoading && isAuthenticated && (
-                <Link href="/dashboard">
-                  <Button size="sm" variant="ghost" className="gap-1 rounded-full">
-                    <LayoutDashboard className="w-4 h-4" />
-                  </Button>
-                </Link>
-              )}
               <Link href="/post">
                 <Button size="sm" className="gap-2 rounded-full">
                   <PlusCircle className="w-4 h-4" />
                   Post
                 </Button>
               </Link>
-              {!isLoading && !isAuthenticated && (
-                <Button size="sm" variant="ghost" className="rounded-full" onClick={() => setLocation("/auth")}>
-                  <LogIn className="w-4 h-4" />
-                </Button>
+              {!isLoading && (
+                isAuthenticated ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className="w-8 h-8 rounded-full ring-2 ring-white/10 hover:ring-primary/50 transition-all overflow-hidden focus:outline-none">
+                        {user?.profileImageUrl ? (
+                          <img src={user.profileImageUrl} alt={user.firstName ?? "User"} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full bg-primary/20 flex items-center justify-center">
+                            <User className="w-3.5 h-3.5 text-primary" />
+                          </div>
+                        )}
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-44">
+                      <div className="px-2 py-1.5 text-sm font-medium truncate">
+                        {user?.firstName ?? user?.email ?? "Account"}
+                      </div>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => setLocation("/dashboard")}>
+                        <LayoutDashboard className="w-4 h-4 mr-2" />
+                        My Dashboard
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={logout} className="text-red-400 focus:text-red-400">
+                        <LogOut className="w-4 h-4 mr-2" />
+                        Log out
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : (
+                  <Button size="sm" variant="ghost" className="rounded-full" onClick={() => setLocation("/auth")}>
+                    <LogIn className="w-4 h-4" />
+                  </Button>
+                )
               )}
             </div>
           </div>
