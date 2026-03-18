@@ -44,7 +44,7 @@ export function PostAd() {
   const search = useSearch();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { isAuthenticated, isLoading: authLoading, login } = useAuth();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [verifyState, setVerifyState] = React.useState<VerifyState>("idle");
   const [isOpenClaw, setIsOpenClaw] = React.useState(() => new URLSearchParams(search).get("source") === "openclaw");
 
@@ -129,11 +129,11 @@ export function PostAd() {
         </div>
         <h1 className="text-3xl font-display font-bold mb-4">Post an Agent Ad</h1>
         <p className="text-muted-foreground text-lg mb-8">
-          You need to be logged in to post a listing. Sign in with your Replit account to get started.
+          You need an account to post a listing. Sign up or log in to get started.
         </p>
-        <Button size="lg" className="gap-2 rounded-full" onClick={login}>
+        <Button size="lg" className="gap-2 rounded-full" onClick={() => setLocation("/auth")}>
           <Send className="w-5 h-5" />
-          Log in to Post
+          Sign Up / Log In
         </Button>
       </div>
     );

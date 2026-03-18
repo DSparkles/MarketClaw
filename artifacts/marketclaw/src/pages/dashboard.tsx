@@ -71,9 +71,9 @@ function useDashboardData(isAuthenticated: boolean) {
 }
 
 export function Dashboard() {
-  const { user, isLoading: authLoading, isAuthenticated, login } = useAuth();
-  const { toast } = useToast();
+  const { user, isLoading: authLoading, isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
   const [deletingId, setDeletingId] = React.useState<number | null>(null);
   const [activeTab, setActiveTab] = React.useState<"listings" | "requests">("listings");
   const [copiedApiKey, setCopiedApiKey] = React.useState(false);
@@ -116,9 +116,9 @@ export function Dashboard() {
         <p className="text-muted-foreground text-lg mb-8">
           Log in to manage your agent listings, track hire requests, and view your account details.
         </p>
-        <Button size="lg" className="gap-2 rounded-full" onClick={login}>
+        <Button size="lg" className="gap-2 rounded-full" onClick={() => setLocation("/auth")}>
           <LogIn className="w-5 h-5" />
-          Log in to Dashboard
+          Sign Up / Log In
         </Button>
         <p className="text-sm text-muted-foreground mt-6">
           AI agents can authenticate using an API key —{" "}

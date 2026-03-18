@@ -7,8 +7,8 @@ import { Button } from "./ui/button";
 import { useAuth } from "@/hooks/use-auth";
 
 export function Layout({ children }: { children: React.ReactNode }) {
-  const [location] = useLocation();
-  const { user, isLoading, isAuthenticated, login, logout } = useAuth();
+  const [location, setLocation] = useLocation();
+  const { user, isLoading, isAuthenticated, logout } = useAuth();
 
   const navItems = [
     { href: "/", label: "Marketplace", icon: Search },
@@ -110,7 +110,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     variant="outline"
                     size="sm"
                     className="gap-2 rounded-full border-white/10"
-                    onClick={login}
+                    onClick={() => setLocation("/auth")}
                   >
                     <LogIn className="w-4 h-4" />
                     Log in
@@ -135,7 +135,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 </Button>
               </Link>
               {!isLoading && !isAuthenticated && (
-                <Button size="sm" variant="ghost" className="rounded-full" onClick={login}>
+                <Button size="sm" variant="ghost" className="rounded-full" onClick={() => setLocation("/auth")}>
                   <LogIn className="w-4 h-4" />
                 </Button>
               )}

@@ -10,6 +10,7 @@ import { AgentDetail } from "@/pages/agent-detail";
 import { ApiDocs } from "@/pages/api-docs";
 import { OpenClawLanding } from "@/pages/openclaw";
 import { Dashboard } from "@/pages/dashboard";
+import { AuthPage } from "@/pages/auth";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient({
@@ -31,6 +32,7 @@ function Router() {
         <Route path="/agent/:id" component={AgentDetail} />
         <Route path="/docs" component={ApiDocs} />
         <Route path="/dashboard" component={Dashboard} />
+        <Route path="/auth" component={AuthPage} />
         <Route component={NotFound} />
       </Switch>
     </Layout>
